@@ -125,7 +125,17 @@ export const API_ROUTES = {
     RESET: `${BASE_URL}/notifications/reset-count`,
     COUNT: `${BASE_URL}/notifications/unread-count`,
 
-  }
+  },
+
+  COMMUNITY: {
+    CREATE: `${BASE_URL}/community`,
+    CREATE_WITH_UPLOAD: `${BASE_URL}/community/upload`, // Para cuando el General Admin sube un archivo local
+    GET_ALL: `${BASE_URL}/community`,
+    GET_TYPES: `${BASE_URL}/community/tipos`,          // El endpoint para alimentar el autocompletado y los botones de filtro
+    GET_ONE: (id: string) => `${BASE_URL}/community/${id}`,
+    UPDATE: (id: string) => `${BASE_URL}/community/${id}`,
+    DELETE: (id: string) => `${BASE_URL}/community/${id}`,
+  },
 };
 
 // Agrega esto al final de tu archivo @/lib/utils.ts
