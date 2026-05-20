@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Sidebar from '@/components/ui/Sidebar';
+import { useEffect, useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from '@/components/ui/pageHeader';
 import Link from 'next/link';
+import { API_ROUTES } from '@/lib/utils';
+import { useRef } from 'react';
 
 interface Colaborador {
   id: string;
@@ -14,174 +16,193 @@ interface Colaborador {
   description?: string;
 }
 
-const CATEGORIES = [
-  'TODOS', 
-  'UNIVERSIDADES Y CENTROS DE INVESTIGACIÓN', 
-  'PARQUES CIENTÍFICOS', 
-  'INSTITUTOS Y CENTROS TECNOLÓGICOS'
-];
+// Variantes de animación reutilizables
+// "ease" debe ser un string nombrado o una tupla "as const" en framer-motion 12
+const EASE_OUT = [0.25, 0.46, 0.45, 0.94] as const;
 
-export default function EcosystemPage() {
+const cardVariants = {
+  hidden:  { opacity: 0, scale: 0.92, y: 12 },
+  visible: { opacity: 1, scale: 1,    y: 0,  transition: { duration: 0.28, ease: EASE_OUT } },
+  exit:    { opacity: 0, scale: 0.9,  y: -8, transition: { duration: 0.18, ease: 'easeIn' as const } },
+};
+
+const containerVariants = {
+  visible: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
+};
+
+export default function CommunityPage() {
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('TODOS');
+  const [categories, setCategories] = useState<string[]>([]);
+
+
+  // Lista filtrada derivada directamente — sin estado auxiliar, sin refs de control.
+  // framer-motion se encarga de animar los cambios de forma declarativa.
+  const filteredList = useMemo(
+    () =>
+      filter === 'TODOS'
+        ? colaboradores
+        : colaboradores.filter((c) => c.type === filter),
+    [filter, colaboradores]
+  );
+
+
+  // 1. Cargar colaboradores y categorías
+  const fetchData = async (isUpdate = false) => {
+    if (!isUpdate) setLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [resColab, resTypes] = await Promise.all([
+        fetch(`${API_ROUTES.COMMUNITY.GET_ALL}`, { headers }),
+        fetch(`${API_ROUTES.COMMUNITY.GET_TYPES}`, { headers }),
+      ]);
+
+      if (resColab.ok && resTypes.ok) {
+        const [dataColab, dataTypes] = await Promise.all([
+          resColab.json(),
+          resTypes.json(),
+        ]);
+
+        setColaboradores(dataColab);
+        setCategories(['TODOS', ...dataTypes]);
+        if (!isUpdate) setFilter('TODOS');
+      }
+    } catch (err) {
+      console.error('Error cargando ecosistema:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchEcosystem = async () => {
-      try {
-        // Simulación de carga de datos (Se mantiene igual)
-        const mockData: Colaborador[] = [
-          {
-            id: 'eco-1',
-            name: 'UNIVERSIDAD DE ALICANTE',
-            type: 'UNIVERSIDADES Y CENTROS DE INVESTIGACIÓN',
-            description: 'Universidad pública con una fuerte vocación de I+D+i y proyectos de transferencia tecnológica.',
-            logoUrl: 'https://atalayas.com/wp-content/uploads/2026/02/logo-ua.png',
-            website: 'https://www.ua.es'
-          },
-          {
-            id: 'eco-2',
-            name: 'UNIVERSIDAD MIGUEL HERNÁNDEZ DE ELCHE',
-            type: 'UNIVERSIDADES Y CENTROS DE INVESTIGACIÓN',
-            description: 'Programas de innovación y colaboración directa con empresas e instituciones.',
-            logoUrl: 'https://atalayas.com/wp-content/uploads/2026/02/logo-umh.png',
-            website: 'https://www.umh.es'
-          },
-          {
-            id: 'eco-3',
-            name: 'PARQUE CIENTÍFICO DE ALICANTE',
-            type: 'PARQUES CIENTÍFICOS',
-            description: 'Ecosistema impulsado por la UA que conecta investigación, empresas y talento.',
-            logoUrl: 'https://atalayas.com/wp-content/uploads/2026/02/logo-pca.png',
-            website: 'https://parquecientificoalicante.es'
-          },
-          {
-            id: 'eco-4',
-            name: 'PARQUE CIENTÍFICO DE LA UMH',
-            type: 'PARQUES CIENTÍFICOS',
-            description: 'Plataforma enfocada en la creación y consolidación de empresas innovadoras.',
-            logoUrl: 'https://atalayas.com/wp-content/uploads/2026/02/logo-umhparc.png',
-            website: 'https://parquecientificoumh.es'
-          },
-          {
-            id: 'eco-5',
-            name: 'AIJU INSTITUTO TECNOLÓGICO',
-            type: 'INSTITUTOS Y CENTROS TECNOLÓGICOS',
-            description: 'Centro tecnológico especializado en productos infantiles y ocio industrial.',
-            logoUrl: 'https://atalayas.com/wp-content/uploads/2026/02/logo-aiju.png',
-            website: 'https://www.aiju.es'
-          },
-          {
-            id: 'eco-6',
-            name: 'INESCOP INSTITUTO TECNOLÓGICO',
-            type: 'INSTITUTOS Y CENTROS TECNOLÓGICOS',
-            description: 'Centro de innovación y tecnología experto en el sector del calzado.',
-            logoUrl: 'https://atalayas.com/wp-content/uploads/2026/02/logo-inescop.png',
-            website: 'https://www.inescop.es'
-          },
-          {
-            id: 'eco-7',
-            name: 'AITEX CENTRO DE INVESTIGACIÓN',
-            type: 'INSTITUTOS Y CENTROS TECNOLÓGICOS',
-            description: 'Instituto tecnológico de referencia en investigación aplicada al sector textil.',
-            logoUrl: 'https://atalayas.com/wp-content/uploads/2026/02/logo-aitex.png',
-            website: 'https://www.aitex.es'
-          }
-        ];
-        setColaboradores(mockData);
-      } catch (err) {
-        console.error("Error cargando ecosistema:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEcosystem();
+    fetchData();
   }, []);
 
-  const filteredList = filter === 'TODOS' 
-    ? colaboradores 
-    : colaboradores.filter(c => c.type === filter);
-
   return (
-    // CAMBIO: bg-background y text-foreground
-    <div className="flex min-h-screen bg-background font-sans text-foreground">
-
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <PageHeader 
+    <div className="flex h-screen overflow-hidden bg-background font-sans text-foreground">
+      <main className="flex-1 overflow-y-auto flex flex-col relative no-scrollbar">
+        <PageHeader
           title="Ecosistema"
-          description="Alianzas estratégicas y centros tecnológicos de proximidad"
-          icon={<i className="bi bi-globe-americas"></i>}
+          description="Explora las entidades y colaboradores clave del ecosistema de Atalayas EGM."
+          icon={<i className="bi bi-diagram-3-fill" />}
         />
 
-        <div className="flex-1 p-6 md:p-10 overflow-y-auto no-scrollbar">
-          
-          {/* FILTROS RÁPIDOS - CAMBIO: Colores dinámicos en los botones */}
-          <div className="flex flex-wrap gap-2 mb-10 max-w-6xl">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setFilter(cat)}
-                className={`px-5 py-2.5 rounded-xl text-[9px] font-black tracking-[0.15em] uppercase transition-all border ${
-                  filter === cat 
-                  ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20' 
-                  : 'bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-primary'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        <div className="p-6 lg:p-10 flex-1 max-w-400 mx-auto w-full relative z-0">
 
-          {/* GRID DE COLABORADORES */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 max-w-400">
-            {loading ? (
-              Array.from({ length: 10 }).map((_, i) => (
-                // CAMBIO: Skeleton en bg-card
-                <div key={i} className="aspect-square bg-card rounded-[32px] border border-border animate-pulse" />
-              ))
-            ) : filteredList.length === 0 ? (
-              <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-[40px] opacity-40">
-                <p className="text-sm italic font-bold text-muted-foreground">No se han encontrado entidades en esta categoría.</p>
-              </div>
-            ) : (
-              filteredList.map((entidad) => (
-                <Link 
-                  key={entidad.id}
-                  href={entidad.website} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  // CAMBIO: bg-card y border-border
-                  className="group flex flex-col bg-card border border-border rounded-[35px] p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                >
-                  {/* CONTENEDOR LOGO - CAMBIO: bg-muted/30 y hover:bg-card */}
-                  <div className="aspect-square w-full bg-muted/30 rounded-[25px] flex items-center justify-center p-6 mb-5 overflow-hidden group-hover:bg-card transition-colors border border-transparent group-hover:border-primary/20">
-                    {entidad.logoUrl ? (
-                      <img 
-                        src={entidad.logoUrl} 
-                        alt={entidad.name} 
-                        // Filtro de brillo opcional para logos oscuros en Dark Mode
-                        className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-110 dark:brightness-110 dark:contrast-125"
-                      />
-                    ) : (
-                      <div className="text-4xl font-black text-muted/20 uppercase">{entidad.name.charAt(0)}</div>
-                    )}
-                  </div>
-                  
-                  {/* TEXTOS */}
-                  <div className="flex-1 flex flex-col">
-                    <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] mb-2">
-                      {entidad.type.split(' ')[0]}
-                    </span>
-                    <h3 className="text-[13px] font-black text-foreground leading-tight mb-2 group-hover:text-primary transition-colors">
-                      {entidad.name}
-                    </h3>
-                  </div>
-                </Link>
-              ))
+          {/* Barra de categorías — aparece suavemente cuando hay datos */}
+          <AnimatePresence>
+            {categories.length > 0 && (
+              <motion.div
+                key="categories"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="flex flex-wrap gap-2 mb-10 bg-card border border-border p-2 rounded-2xl shadow-sm w-fit min-h-14.5 items-center"
+              >
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setFilter(cat)}
+                    className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                      filter === cat
+                        ? 'bg-primary/10 text-primary shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    {cat === 'TODOS' ? 'Todos' : cat}
+                  </button>
+                ))}
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
+
+          {/* Spinner de carga */}
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="spinner"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col items-center justify-center py-48 w-full gap-4"
+              >
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="grid"
+                initial="hidden"
+                animate="visible"
+                variants={containerVariants}
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 pb-12"
+              >
+                <AnimatePresence mode="popLayout">
+                  {filteredList.length === 0 ? (
+                    <motion.div
+                      key="empty"
+                      variants={cardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="col-span-full text-center py-24 bg-card rounded-[2.5rem] border-2 border-dashed border-border shadow-sm"
+                    >
+                      <i className="bi bi-search text-5xl text-muted-foreground/30 mb-4 block" />
+                      <p className="text-muted-foreground font-bold text-lg">
+                        No hay entidades en esta categoría.
+                      </p>
+                    </motion.div>
+                  ) : (
+                    filteredList.map((entidad) => (
+                      <motion.div
+                        key={entidad.id}
+                        layout
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="group relative flex flex-col"
+                      >
+                        <div className="aspect-square bg-white dark:bg-card rounded-[2.5rem] border border-border shadow-sm group-hover:shadow-2xl group-hover:border-primary/40 transition-all duration-500 flex flex-col items-center justify-center p-8 overflow-hidden relative">
+
+                          <div className="w-full h-full flex items-center justify-center transition-transform duration-700 group-hover:scale-90 group-hover:blur-sm">
+                            <img
+                              src={entidad.logoUrl}
+                              alt={entidad.name}
+                              className="max-w-full max-h-full object-contain"
+                            />
+                          </div>
+
+                          <div className="absolute inset-0 bg-background/60 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-4 p-6 z-10">
+                            <a
+                              href={entidad.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 text-secondary text-[10px] font-black uppercase tracking-widest hover:text-foreground transition-colors flex items-center gap-2 bg-secondary/10 px-4 py-2 rounded-full border border-secondary/20"
+                            >
+                              Visitar Web <i className="bi bi-box-arrow-up-right" />
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 text-center px-2">
+                          <p className="text-xs font-black uppercase tracking-widest text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                            {entidad.name}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
-    </div>
-  );
+    </div>    
+  )
 }

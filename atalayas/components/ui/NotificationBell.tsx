@@ -10,55 +10,57 @@ interface NotificationBellProps {
   lastResetDate: Date | null;
 }
 
-export default function NotificationBell({ 
-  unreadCount, 
-  onReset, 
-  latestItems, 
-  lastResetDate 
+export default function NotificationBell({
+  unreadCount,
+  onReset,
+  latestItems,
+  lastResetDate,
 }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
-  // Estado local para "congelar" las notificaciones mientras la campana está abierta
+
+  // Fecha de corte LOCAL: se inicializa con la del padre (ítems ya vistos
+  // en sesiones anteriores) y avanza cada vez que el usuario abre la campana.
+  // De esta forma el vaciado NO depende de que el padre actualice lastResetDate.
+  const [localResetDate, setLocalResetDate] = useState<Date | null>(lastResetDate);
+
+  // Snapshot congelado de lo que se mostraba al abrir.
+  // No se recalcula mientras la campana está abierta.
   const [itemsToShow, setItemsToShow] = useState<any[]>([]);
-  const prevIsOpen = useRef(false);
 
-  // LÓGICA DE ACTUALIZACIÓN EN DIFERIDO:
-  // Solo refrescamos lo que se muestra cuando la campana está CERRADA.
-  // Así, al abrirla, el usuario lee lo nuevo, y al cerrarla "se limpia" para la próxima vez.
+  const hasInitialized = useRef(false);
+
+  // Función de filtrado — siempre usa la fecha de corte LOCAL
+  const filterByDate = (items: any[], cutoff: Date | null) => {
+    if (!cutoff) return items;
+    return items.filter(
+      (item) => new Date(item.date).getTime() > cutoff.getTime()
+    );
+  };
+
+  // Inicialización: carga el primer snapshot cuando llegan los datos del padre.
+  // Solo corre una vez; los cambios posteriores de latestItems no re-disparan esto.
   useEffect(() => {
-    // Detectamos el momento exacto en que pasa de abierto a cerrado
-    if (prevIsOpen.current === true && isOpen === false) {
-      const filtered = latestItems.filter(item => {
-        if (!lastResetDate) return true;
-        return new Date(item.date).getTime() > new Date(lastResetDate).getTime();
-      });
-      setItemsToShow(filtered);
+    if (!hasInitialized.current && latestItems.length > 0) {
+      setItemsToShow(filterByDate(latestItems, localResetDate));
+      hasInitialized.current = true;
     }
-    
-    // Si es la primera vez que carga y está cerrado, también filtramos
-    if (!isOpen && itemsToShow.length === 0 && latestItems.length > 0) {
-        const initialFiltered = latestItems.filter(item => {
-            if (!lastResetDate) return true;
-            return new Date(item.date).getTime() > new Date(lastResetDate).getTime();
-        });
-        setItemsToShow(initialFiltered);
-    }
-
-    prevIsOpen.current = isOpen;
-  }, [isOpen, latestItems, lastResetDate]);
+  }, [latestItems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOpen = () => {
     if (!isOpen) {
-      // Antes de abrir, nos aseguramos de capturar lo que es "nuevo" en ese instante
-      const freshItems = latestItems.filter(item => {
-        if (!lastResetDate) return true;
-        return new Date(item.date) > lastResetDate;
-      });
-      setItemsToShow(freshItems);
-      
-      // Reseteamos el contador (el número rojo desaparece en el padre)
+      // 1. Capturar snapshot con la fecha de corte ACTUAL (antes de avanzarla)
+      const snapshot = filterByDate(latestItems, localResetDate);
+      setItemsToShow(snapshot);
+
+      // 2. Avanzar la fecha de corte local a AHORA.
+      //    La próxima vez que se abra, solo items POSTERIORES a este momento
+      //    aparecerán como nuevos → la bandeja queda vacía hasta que llegue algo nuevo.
+      setLocalResetDate(new Date());
+
+      // 3. Notificar al padre para que resetee el contador (número rojo)
       if (unreadCount > 0) onReset();
     }
-    setIsOpen(!isOpen);
+    setIsOpen((prev) => !prev);
   };
 
   const formatTimeAgo = (dateStr: string) => {
@@ -70,7 +72,6 @@ export default function NotificationBell({
     if (diffInSeconds < 60) return 'Ahora';
     if (diffInSeconds < 3600) return `Hace ${Math.floor(diffInSeconds / 60)}m`;
     if (diffInSeconds < 86400) return `Hace ${Math.floor(diffInSeconds / 3600)}h`;
-    
     return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   };
 
@@ -81,7 +82,7 @@ export default function NotificationBell({
         onClick={handleOpen}
         className="relative w-10 h-10 rounded-xl flex items-center justify-center 
                    text-white bg-white/10 hover:bg-white/20 border border-white/20 
-                   transition-all duration-300 backdrop-blur-md shadow-lg"
+                   transition-all duration-300 backdrop-blur-md shadow-lg cursor-pointer"
       >
         <i className={`bi ${unreadCount > 0 ? 'bi-bell-fill' : 'bi-bell'} text-lg`}></i>
         {unreadCount > 0 && (
@@ -96,7 +97,7 @@ export default function NotificationBell({
           <>
             {/* Overlay para cerrar al hacer clic fuera */}
             <div className="fixed inset-0 z-90" onClick={() => setIsOpen(false)} />
-            
+
             <motion.div
               initial={{ opacity: 0, y: 15, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -121,41 +122,40 @@ export default function NotificationBell({
                   </span>
                 )}
               </div>
-              
+
               {/* Lista de Items */}
               <div className="max-h-100 overflow-y-auto no-scrollbar">
                 {itemsToShow.length > 0 ? (
                   itemsToShow.map((item) => (
                     <Link
                       key={`${item.type}-${item.id}`}
-                      href={item.href || '#'} 
+                      href={item.href || '#'}
                       onClick={() => setIsOpen(false)}
                       className="block relative px-6 py-5 border-b border-slate-50 dark:border-white/5 transition-all group hover:bg-slate-50 dark:hover:bg-white/5"
                     >
-                      {/* Indicador lateral a todo color */}
-                      <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full shadow-sm ${
-                        item.type === 'EVENTO' ? 'bg-orange-500' : 'bg-teal-500'
-                      }`} />
-                      
+                      <div
+                        className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full shadow-sm ${
+                          item.type === 'EVENTO' ? 'bg-orange-500' : 'bg-teal-500'
+                        }`}
+                      />
                       <div className="flex flex-col gap-1.5">
                         <div className="flex justify-between items-center">
-                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
-                            item.type === 'EVENTO' 
-                              ? 'border-orange-500/20 text-orange-600 dark:text-orange-400' 
-                              : 'border-teal-500/20 text-teal-600 dark:text-teal-400'
-                          }`}>
+                          <span
+                            className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                              item.type === 'EVENTO'
+                                ? 'border-orange-500/20 text-orange-600 dark:text-orange-400'
+                                : 'border-teal-500/20 text-teal-600 dark:text-teal-400'
+                            }`}
+                          >
                             {item.type}
                           </span>
                           <span className="text-[10px] text-slate-400 font-bold">
                             {formatTimeAgo(item.date)}
                           </span>
                         </div>
-                        
-                        {/* Texto nítido y sin opacidades bajas */}
                         <h4 className="text-[14px] font-bold text-slate-900 dark:text-white leading-tight group-hover:text-blue-600 dark:group-hover:text-primary transition-colors">
                           {item.title}
                         </h4>
-                        
                         <p className="text-[12px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-snug">
                           {item.displayContent || item.content}
                         </p>
