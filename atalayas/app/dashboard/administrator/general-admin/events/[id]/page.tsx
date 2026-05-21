@@ -254,7 +254,7 @@ export default function GAdminEventDetailPage() {
 
       <AnimatePresence>
         {isEditModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
             <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="bg-white dark:bg-[#1c1c1e] w-full max-w-2xl rounded-[3rem] p-10 overflow-y-auto max-h-[90vh] shadow-2xl border border-white/10 no-scrollbar">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-black italic tracking-tighter underline decoration-primary decoration-4 uppercase">Editar Evento</h2>
@@ -299,7 +299,7 @@ export default function GAdminEventDetailPage() {
 
       <AnimatePresence>
         {isDeleteModalOpen && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-[#1c1c1e] p-10 rounded-[3rem] max-w-sm text-center shadow-2xl">
               <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6"><i className="bi bi-trash3-fill text-3xl"></i></div>
               <h3 className="text-xl font-black mb-2 uppercase tracking-tighter italic">¿Borrar Evento?</h3>

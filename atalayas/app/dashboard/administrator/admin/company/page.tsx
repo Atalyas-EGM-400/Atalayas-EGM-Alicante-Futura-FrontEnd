@@ -119,6 +119,32 @@ export default function EditCompanyPage() {
     }
 
     const updated = await res.json();
+
+    // 1. Obtener usuario actual del localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      
+      // 2. Actualizar la URL del logo en el objeto user (con precaución en la estructura)
+      if (user.company) {
+        user.company.logoUrl = updated.logoUrl;
+      } else if (user.Company) {
+        user.Company.logoUrl = updated.logoUrl;
+      } else {
+        // Por si acaso la estructura es plana
+        user.logoUrl = updated.logoUrl; 
+      }
+      
+      // 3. Guardar el usuario actualizado de vuelta en el localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      console.log('🟡 EditPage: localStorage sincronizado con nuevo logo');
+    }
+
+    // 4. Emitir el evento personalizado para que Sidebar lo escuche
+    console.log('🟢 EditPage: Emitiendo evento de actualización de logo...');
+    window.dispatchEvent(new Event('company_logo_updated'));
+
+
     if (updated.logoUrl) setCurrentLogoUrl(updated.logoUrl);
     setNewFile(null);
     setLogoPreview(null);
