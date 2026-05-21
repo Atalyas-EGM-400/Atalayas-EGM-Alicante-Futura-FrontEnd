@@ -165,6 +165,52 @@ useEffect(() => {
     return () => window.removeEventListener('local-storage-update', updateCounts);
   }, []);
 
+  useEffect(() => {
+  // Función centralizada para cargar el usuario
+  const loadUser = () => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) setUser(JSON.parse(savedUser));
+  };
+
+  // Carga inicial
+  loadUser();
+
+  // 👇 NUEVO: Escuchar el evento personalizado 👇
+  const handleLogoUpdate = () => {
+    console.log("🟠 Sidebar: Escuchando evento de actualización de logo, recargando usuario...");
+    loadUser(); // Recargamos el usuario del localStorage (donde estará el nuevo logo)
+  };
+
+  // Añadimos el listener para nuestro evento custom
+  window.addEventListener('company_logo_updated', handleLogoUpdate);
+
+  // Configuración del tema y listeners existentes...
+  const savedTheme = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const initialTheme = savedTheme === 'dark' || (!savedTheme && prefersDark);
+  setIsDark(initialTheme);
+  
+  if (initialTheme) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+
+  setMounted(true);
+
+  const checkResizing = () => {
+    if (window.innerWidth < 1024) setCollapsed(true);
+  };
+  window.addEventListener('resize', checkResizing);
+
+  // 👇 NUEVO: Limpieza del listener en el desmontado 👇
+  return () => {
+    window.removeEventListener('resize', checkResizing);
+    window.removeEventListener('company_logo_updated', handleLogoUpdate);
+    };
+  }, []);
+
+
   const toggleTheme = () => {
     const root = document.documentElement;
     const newTheme = !isDark;
@@ -233,7 +279,7 @@ className="lg:hidden fixed bottom-6 left-6 z-50 w-14 h-14 bg-primary text-white 
         <div className={`flex items-center justify-between border-b border-border transition-all duration-300 ${!showText ? 'h-20 px-0 justify-center' : 'h-24 px-4 gap-3'}`}>
           <div className={`
             bg-white rounded-[18px] shadow-sm border border-gray-200/60 dark:border-white/10 flex items-center justify-center overflow-hidden transition-all
-            ${!showText ? 'w-12 h-12 p-1.5' : 'flex-1 h-14 p-2.5'}
+            ${!showText ? 'w-12 h-12' : 'w-full h-20 flex items-center justify-center'}
           `}>
             <img src={displayLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
           </div>

@@ -25,13 +25,13 @@ const ATALAYAS_INFO = [
   },
   {
     title: "Talento y Vivero",
-    desc: "Fomentamos la formación dual y el acceso a una bolsa de empleo especializada en el sector industrial y tecnológico.",
+    desc: "Fomentamos la formación especializada en el sector industrial y tecnológico.",
     img: "/images/talento.jpg",
     color: "text-orange-500"
   },
   {
     title: "Conectividad 4.0",
-    desc: "Infraestructura de alta disponibilidad con fibra simétrica y monitorización avanzada para la industria del futuro.",
+    desc: "Infraestructura de alta disponibilidad con monitorización avanzada.",
     img: "/images/infraestructura.jpg",
     color: "text-indigo-400"
   }
@@ -132,9 +132,9 @@ export default function LandingPage() {
                 <div className="space-y-4">
                     {[
                         { title: 'Capacitación', desc: 'Formación técnica y talento dual.', icon: 'bi-mortarboard' },
-                        { title: 'Subvenciones', desc: 'Gestión de ayudas y fondos europeos.', icon: 'bi-bank' },
+                        { title: 'Servicios', desc: 'Explora los beneficios a tu disposición.', icon: 'bi-bank' },
                         { title: 'Networking', desc: 'Conexiones industriales directas.', icon: 'bi-people' },
-                        { title: 'Digitalización', desc: 'Transformación y tecnología 4.0.', icon: 'bi-cpu' }
+                        { title: 'Digitalización', desc: 'Transformación y tecnología.', icon: 'bi-cpu' }
                     ].map((serv, i) => (
                         <div key={i} className="flex items-start gap-4 transition-all">
                             <div className="w-8 h-8 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center shrink-0">

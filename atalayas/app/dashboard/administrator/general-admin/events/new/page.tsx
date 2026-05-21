@@ -54,7 +54,7 @@ export default function GAdminNewPublicEvent() {
       
       // 5. La Imagen
       if (formData.imageFile) {
-        data.append("image", formData.imageFile); // Asegúrate que el backend espere "image"
+        data.append("file", formData.imageFile); // Asegúrate que el backend espere "image"
       }
 
       // 6. En el caso de General Admin, companyId es null
