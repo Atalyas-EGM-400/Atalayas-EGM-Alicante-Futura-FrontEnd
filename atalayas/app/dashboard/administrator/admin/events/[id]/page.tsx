@@ -354,15 +354,6 @@ export default function EventDetailPage() {
                       className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-none outline-none font-bold focus:ring-2 ring-primary/20"
                     />
                   </div>
-                  <div>
-                    <label className="text-[10px] font-black uppercase ml-1 opacity-60 italic">Aforo Máx.</label>
-                    <input
-                      type="number"
-                      value={editForm.max_capacity ?? ""}
-                      onChange={(e) => setEditForm({ ...editForm, max_capacity: e.target.value })}
-                      className="w-full p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-none outline-none font-bold focus:ring-2 ring-primary/20"
-                    />
-                  </div>
                 </div>
                 <div>
                   <label className="text-[10px] font-black uppercase ml-1 opacity-60 italic">Ubicación</label>

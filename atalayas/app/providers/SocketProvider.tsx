@@ -28,7 +28,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     if (!token) return;
 
     // URL puesta a fuego para que no haya margen de error
-    const backendUrl = 'https://zoological-passion-atalayas.up.railway.app';
+    /*const backendUrl = 'https://zoological-passion-atalayas.up.railway.app';*/
+    const backendUrl = 'http://localhost:3000';
+
 
     const newSocket = io(`${backendUrl}/stats`, {
       transports: ['websocket'],
