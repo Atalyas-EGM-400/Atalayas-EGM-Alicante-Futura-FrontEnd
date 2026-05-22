@@ -111,7 +111,7 @@ function ProfileContent() {
               
               <div className="flex flex-col items-center gap-4 pb-4">
                 <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                  <div className="absolute -inset-1.5 bg-gradient-to-r from-teal-400 via-amber-400 to-orange-500 rounded-full blur-md opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
+                  <div className="absolute -inset-1.5 bg-linear-to-r from-teal-400 via-amber-400 to-orange-500 rounded-full blur-md opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
                   <img src={avatarPreview || (currentAvatarUrl ? encodeURI(currentAvatarUrl) : 'https://www.gravatar.com/avatar/0?d=mp')} alt="Avatar" className="relative w-32 h-32 rounded-full object-cover border-4 border-card shadow-xl" />
                   <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <i className="bi bi-camera text-white text-2xl mb-1"></i>

@@ -169,26 +169,41 @@ export default function ManageCourses() {
     }
   };
 
-  // Manejar cambio de filtro
   const handleFilterChange = (newFilter: "Todos" | "Onboarding" | "Especialización") => {
     setFilter(newFilter);
     setSelectedRole("");
     setShowRoleFilter(newFilter === "Especialización");
   };
 
-  // Filtrar cursos
-  const filtered = courses.filter((c) => {
-    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase());
-    let matchesTab = true;
-    if (filter === "Onboarding") matchesTab = c.category?.toUpperCase() !== "ESPECIALIZADO";
-    if (filter === "Especialización") {
-      matchesTab = c.category?.toUpperCase() === "ESPECIALIZADO";
-      if (matchesTab && selectedRole) {
-        matchesTab = c.jobRole === selectedRole;
+  // --- MODIFICACIÓN DE FILTRADO Y ORDENAMIENTO COMPUESTO ---
+  const filteredAndSorted = courses
+    .filter((c) => {
+      const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase());
+      let matchesTab = true;
+      if (filter === "Onboarding") matchesTab = c.category?.toUpperCase() !== "ESPECIALIZADO";
+      if (filter === "Especialización") {
+        matchesTab = c.category?.toUpperCase() === "ESPECIALIZADO";
+        if (matchesTab && selectedRole) {
+          matchesTab = c.jobRole === selectedRole;
+        }
       }
-    }
-    return matchesSearch && matchesTab;
-  });
+      return matchesSearch && matchesTab;
+    })
+    .sort((a, b) => {
+      // 1. Primer Criterio: Privados primero (false -> 0) antes que Públicos (true -> 1)
+      const aPublic = a.isPublic ? 1 : 0;
+      const bPublic = b.isPublic ? 1 : 0;
+      
+      if (aPublic !== bPublic) {
+        return aPublic - bPublic;
+      }
+
+      // 2. Segundo Criterio (Si tienen la misma privacidad): Básicos (BASICO -> 0) antes que Especializados (ESPECIALIZADO -> 1)
+      const aCategory = a.category?.toUpperCase() === "ESPECIALIZADO" ? 1 : 0;
+      const bCategory = b.category?.toUpperCase() === "ESPECIALIZADO" ? 1 : 0;
+      
+      return aCategory - bCategory;
+    });
 
   return (
     <div className="flex min-h-screen bg-background font-sans relative">
@@ -225,7 +240,6 @@ export default function ManageCourses() {
             <div className="p-5 border-b border-border flex flex-col lg:flex-row lg:items-center gap-4 bg-muted/10">
 
               <div className="flex flex-wrap items-center gap-2">
-                {/* Filtros de tipo de curso */}
                 <div className="flex flex-wrap gap-1 bg-card border border-border p-1 rounded-xl shadow-sm">
                   {(["Todos", "Onboarding", "Especialización"] as const).map((tab) => (
                     <button
@@ -241,7 +255,6 @@ export default function ManageCourses() {
                   ))}
                 </div>
 
-                {/* Barra de búsqueda de roles (solo visible cuando el filtro es Especialización) */}
                 <AnimatePresence mode="wait">
                   {showRoleFilter && (
                     <motion.div
@@ -279,7 +292,6 @@ export default function ManageCourses() {
                 </AnimatePresence>
               </div>
 
-              {/* Barra de búsqueda por título */}
               <div className="relative w-full lg:max-w-xs ml-auto">
                 <i className="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm"></i>
                 <input
@@ -304,7 +316,7 @@ export default function ManageCourses() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {!loading && filtered.map((course) => (
+                  {!loading && filteredAndSorted.map((course) => (
                     <tr key={course.id} className="group hover:bg-muted/30 transition-colors">
                       <td className="px-6 lg:px-8 py-4">
                         <Link href={`/dashboard/administrator/admin/courses/${course.id}/manage`} className="flex items-center gap-4 cursor-pointer group/link">
@@ -366,7 +378,7 @@ export default function ManageCourses() {
                       </td>
                     </tr>
                   ))}
-                  {!loading && filtered.length === 0 && (
+                  {!loading && filteredAndSorted.length === 0 && (
                     <tr>
                       <td colSpan={4} className="py-12 text-center text-muted-foreground">
                         <i className="bi bi-inbox text-3xl mb-3 block opacity-50"></i>
@@ -388,8 +400,6 @@ export default function ManageCourses() {
             <h3 className="text-xl font-bold text-foreground mb-6">Editar Curso</h3>
 
             <form onSubmit={handleUpdate} className="space-y-5">
-
-              {/* Campo de Imagen */}
               <div className="space-y-2">
                 <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">Imagen de portada</label>
                 <label className="relative h-32 w-full border-2 border-dashed border-border rounded-2xl flex items-center justify-center bg-muted/30 hover:border-primary transition-all cursor-pointer group overflow-hidden">
@@ -422,7 +432,6 @@ export default function ManageCourses() {
                 </label>
               </div>
 
-              {/* Título */}
               <div>
                 <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">Título del curso</label>
                 <input
@@ -434,7 +443,6 @@ export default function ManageCourses() {
                 />
               </div>
 
-              {/* Categoría */}
               <div>
                 <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">Categoría</label>
                 <select
@@ -454,7 +462,6 @@ export default function ManageCourses() {
                 </select>
               </div>
 
-              {/* Rol Requerido - Solo para especialización */}
               {courseToEdit.category === "ESPECIALIZADO" && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">
