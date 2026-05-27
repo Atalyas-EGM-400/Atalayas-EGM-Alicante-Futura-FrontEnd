@@ -387,6 +387,11 @@ export default function AdminContentDetail() {
                             className={inputClass}
                           />
                         </div>
+                        </div>
+                      <div className="grid grid-cols-1 md:grid-cols-1 gap-1">
+
+                        <label className={labelClass}>Imagen</label>
+
                         <input
                           placeholder="URL Imagen"
                           value={formData.imageUrl}
@@ -398,6 +403,10 @@ export default function AdminContentDetail() {
                           }
                           className={inputClass}
                         />
+                        </div>
+                      <div className="grid grid-cols-1 md:grid-cols-1 gap-1">
+
+                        <label className={labelClass}>Vídeo</label>
                         <input
                           placeholder="URL Video"
                           value={formData.videoUrl}
@@ -409,7 +418,7 @@ export default function AdminContentDetail() {
                           }
                           className={inputClass}
                         />
-                      </div>
+                        </div>
                       <label className={labelClass}>Cuerpo (Markdown)</label>
                       <textarea
                         rows={10}
@@ -441,7 +450,7 @@ export default function AdminContentDetail() {
                           >
                             <button
                               onClick={() => removeQuestion(qIdx)}
-                              className="absolute top-4 right-4 text-muted-foreground hover:text-destructive"
+                              className="absolute top-3 right-2 text-muted-foreground hover:text-destructive"
                             >
                               <i className="bi bi-trash3"></i>
                             </button>
@@ -501,19 +510,12 @@ export default function AdminContentDetail() {
                     {activeTab === "lectura" && (
                       <div className="space-y-8">
                         {/* Mostrar imagen con manejo de errores */}
-                        {content?.imageUrl && content.imageUrl.trim() !== "" && !imageError && (
-                          <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg border border-border/50 bg-muted/20">
-                            <img
-                              ref={imageRef}
-                              src={content.imageUrl}
-                              className="w-full h-full object-contain"
-                              alt="Cover"
-                              onError={(e) => {
-                                console.error("Error cargando imagen:", content.imageUrl);
-                                setImageError(true);
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
+                       {content?.imageUrl && (
+                          <div className="relative group cursor-zoom-in">
+                            <img ref={imageRef} src={content.imageUrl} className="w-full aspect-4/3 md:aspect-16/10 object-cover object-center rounded-[1.5rem] md:rounded-[2rem] shadow-lg border border-border/50 transition-transform duration-500 hover:scale-[1.01]" alt="Cover" onError={() => setImageError(true)} />
+                            <div className="absolute top-4 right-4 bg-black/20 backdrop-blur-md p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                              <i className="bi bi-zoom-in text-white"></i>
+                            </div>
                           </div>
                         )}
 
@@ -710,14 +712,14 @@ export default function AdminContentDetail() {
 
       {/* ── MODAL LABORATORIO ── */}
       {showLabModal && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 backdrop-blur-xl md:p-4">
+        <div className="fixed inset-0 z-120 flex items-center justify-center bg-black/95 backdrop-blur-xl md:p-4">
           <div className="bg-card border border-border md:rounded-[40px] w-full max-w-6xl h-full md:h-[90vh] relative overflow-hidden shadow-2xl flex flex-col">
             <button
               onClick={() => {
                 setShowLabModal(false);
                 setIsLabStarted(false);
               }}
-              className="absolute top-4 right-4 z-[130] w-10 h-10 bg-white/10 hover:bg-destructive rounded-full flex items-center justify-center text-white transition-all shadow-lg"
+              className="absolute top-4 right-4 z-130 w-10 h-10 bg-white/10 hover:bg-destructive rounded-full flex items-center justify-center text-white transition-all shadow-lg"
             >
               <i className="bi bi-x-lg"></i>
             </button>
@@ -755,7 +757,7 @@ export default function AdminContentDetail() {
 
       {/* ── MODAL QUIZ ── */}
       {showQuizModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-3 md:p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-md p-3 md:p-4">
           <div className="bg-card border border-border rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
             <div className="flex justify-between items-center mb-6 md:mb-8 shrink-0">
               <h3 className="text-xl md:text-2xl font-black italic">
@@ -809,7 +811,7 @@ export default function AdminContentDetail() {
 
       {/* ── MODAL ELIMINAR ── */}
       {showDeleteModal && isModifiable && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[110 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-card border border-border rounded-[1.5rem] md:rounded-[2rem] p-8 md:p-10 max-w-sm w-full text-center shadow-2xl">
             <i className="bi bi-exclamation-triangle text-4xl text-destructive mb-4 block"></i>
             <h3 className="text-xl font-black mb-2">¿Borrar unidad?</h3>

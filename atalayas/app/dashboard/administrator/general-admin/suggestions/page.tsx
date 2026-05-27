@@ -116,7 +116,7 @@ export default function GeneralAdminSuggestionsPage() {
           title="Buzón de Sugerencias"
           description={
             pendingCount > 0
-              ? `Hay ${pendingCount} sugerencia${pendingCount > 1 ? "s" : ""} global${pendingCount > 1 ? "es" : ""} sin procesar.`
+              ? `Hay ${pendingCount} sugerencia${pendingCount > 1 ? "s" : ""} sin procesar.`
               : "Revisa las propuestas de mejora enviadas por empresas y usuarios del ecosistema."
           }
           icon={<i className="bi bi-mailbox2"></i>}

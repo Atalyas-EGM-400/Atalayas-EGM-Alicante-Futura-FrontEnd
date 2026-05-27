@@ -201,8 +201,7 @@ export default function AnnouncementsPage() {
       {/* Botón de Crear: Consistente con la página de eventos */}
       <button 
         onClick={() => router.push(`/dashboard/administrator/general-admin/announcements/new`)}
-              className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
-        title="Crear Nuevo Anuncio"
+              className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
       >
         <i className="bi bi-plus-lg text-lg sm:text-base"></i>
         <span className="hidden sm:inline whitespace-nowrap">

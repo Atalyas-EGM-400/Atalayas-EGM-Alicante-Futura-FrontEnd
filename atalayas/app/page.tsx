@@ -163,7 +163,7 @@ export default function LandingPage() {
               <h2 className={`text-5xl sm:text-6xl md:text-7xl lg:text-[90px] font-black tracking-tighter leading-[0.9] text-transparent bg-clip-text pb-2 ${PREMIUM_GRADIENT}`}>Innovación.</h2>
             </div>
             <p className="max-w-md mx-auto lg:mx-0 text-lg md:text-xl font-medium text-muted-foreground leading-relaxed mb-10 md:mb-12 px-4 lg:px-0">Mucho más que un espacio industrial. Somos el vivero donde las medianas empresas alicantinas se conectan e innovan.</p>
-            <Link href="/register" className="inline-block px-10 md:px-12 py-4 md:py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] transition-all hover:scale-105 shadow-xl shadow-orange-500/20">Registrar mi Empresa</Link>
+            <Link href="/company-register" className="inline-block px-10 md:px-12 py-4 md:py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] transition-all hover:scale-105 shadow-xl shadow-orange-500/20">Registrar mi Empresa</Link>
           </div>
         </div>
       </section>

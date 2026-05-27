@@ -6,6 +6,69 @@ import Sidebar from "@/components/ui/Sidebar";
 import PageHeader from "@/components/ui/pageHeader";
 import { API_ROUTES } from "@/lib/utils";
 
+// ==========================================
+// 1. SUBCOMPONENTE SECTION EXTRAÍDO FUERA
+// ==========================================
+interface SectionProps {
+  section: 'image' | 'video' | 'presentation';
+  title: string;
+  icon: string;
+  colorClass: string;
+  children: React.ReactNode;
+  openSections: { image: boolean; video: boolean; presentation: boolean };
+  toggleSection: (section: 'image' | 'video' | 'presentation') => void;
+  hasContent: (section: string) => boolean;
+}
+
+const Section = ({
+  section,
+  title,
+  icon,
+  colorClass,
+  children,
+  openSections,
+  toggleSection,
+  hasContent
+}: SectionProps) => (
+  <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
+    <button
+      type="button"
+      onClick={() => toggleSection(section)}
+      className="w-full p-6 lg:p-8 flex items-center justify-between group hover:bg-muted/20 transition-colors"
+    >
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${colorClass}`}>
+          <i className={`bi ${icon} text-sm`}></i>
+        </div>
+        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          {title}
+        </h3>
+        {hasContent(section) && (
+          <div className="flex items-center gap-1 ml-2">
+            <i className="bi bi-check-circle-fill text-emerald-500 text-xs"></i>
+            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wider">Completado</span>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        {hasContent(section) && (
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+        )}
+        <i className={`bi bi-chevron-${openSections[section] ? 'up' : 'down'} text-muted-foreground transition-transform text-sm`}></i>
+      </div>
+    </button>
+
+    {openSections[section] && (
+      <div className="px-6 pb-6 lg:px-8 lg:pb-8 border-t border-border/50">
+        {children}
+      </div>
+    )}
+  </div>
+);
+
+// ==========================================
+// 2. COMPONENTE PRINCIPAL
+// ==========================================
 export default function NewAIContentPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -21,7 +84,6 @@ export default function NewAIContentPage() {
     image: false,
     video: false,
     presentation: false,
-    quiz: false,
   });
 
   const [summaryInputType, setSummaryInputType] = useState<'write' | 'upload'>('write');
@@ -86,6 +148,7 @@ export default function NewAIContentPage() {
     (creationMode === 'ai' ? (sourceType === 'file' ? formData.file !== null : formData.url.trim().length > 0) :
       (summaryInputType === 'write' ? summaryText.trim().length > 0 : summaryFile !== null));
 
+  // CORRECCIÓN: Envío del PDF por URL e IA
   const handleSubmitAI = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) return alert("El título es obligatorio");
@@ -98,7 +161,7 @@ export default function NewAIContentPage() {
     if (sourceType === 'file' && formData.file) {
       data.append('file', formData.file);
     } else if (sourceType === 'link' && formData.url) {
-      data.append('externalUrl', formData.url);
+      data.append('url', formData.url); // Ajustado a 'url' común según requiera tu Backend
     }
 
     try {
@@ -156,36 +219,32 @@ export default function NewAIContentPage() {
         });
       }
 
-      // Usar FormData
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title.trim());
       formDataToSend.append('summary', finalSummary);
 
-      // Manejar imagen (archivo o URL)
       if (imageSourceType === 'file' && imageFile) {
         formDataToSend.append('imageFile', imageFile);
       } else if (imageUrl) {
         formDataToSend.append('imageUrl', imageUrl);
       }
 
-      // Manejar video (archivo o URL)
       if (videoSourceType === 'file' && videoFile) {
         formDataToSend.append('videoFile', videoFile);
       } else if (videoUrl) {
         formDataToSend.append('videoUrl', videoUrl);
       }
 
-      // Manejar presentación (archivo o URL)
       if (presentationSourceType === 'file' && presentationFile) {
         formDataToSend.append('presentationFile', presentationFile);
       } else if (presentationUrl) {
         formDataToSend.append('presentationUrl', presentationUrl);
       }
 
-      // Adjuntar el documento PDF si existe
-      if (documentFile && documentSourceType === 'file') {
+      // CORRECCIÓN manual: Adjuntar documento desde URL si aplica
+      if (documentSourceType === 'file' && documentFile) {
         formDataToSend.append('file', documentFile);
-      } else if (documentUrl) {
+      } else if (documentSourceType === 'link' && documentUrl) {
         formDataToSend.append('url', documentUrl);
       }
 
@@ -217,58 +276,8 @@ export default function NewAIContentPage() {
 
   const handleSubmit = creationMode === 'ai' ? handleSubmitAI : handleSubmitManual;
 
-  const Section = ({
-    section,
-    title,
-    icon,
-    colorClass,
-    children
-  }: {
-    section: keyof typeof openSections;
-    title: string;
-    icon: string;
-    colorClass: string;
-    children: React.ReactNode;
-  }) => (
-    <div className="bg-card rounded-3xl border border-border shadow-sm overflow-hidden">
-      <button
-        type="button"
-        onClick={() => toggleSection(section)}
-        className="w-full p-6 lg:p-8 flex items-center justify-between group hover:bg-muted/20 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${colorClass}`}>
-            <i className={`bi ${icon} text-sm`}></i>
-          </div>
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            {title}
-          </h3>
-          {hasContent(section) && (
-            <div className="flex items-center gap-1 ml-2">
-              <i className="bi bi-check-circle-fill text-emerald-500 text-xs"></i>
-              <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wider">Completado</span>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {hasContent(section) && (
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-          )}
-          <i className={`bi bi-chevron-${openSections[section] ? 'up' : 'down'} text-muted-foreground transition-transform text-sm`}></i>
-        </div>
-      </button>
-
-      {openSections[section] && (
-        <div className="px-6 pb-6 lg:px-8 lg:pb-8 border-t border-border/50">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground">
-      
       <main className="flex-1 overflow-auto flex flex-col relative">
         <PageHeader
           title="Nuevo Contenido"
@@ -306,7 +315,6 @@ export default function NewAIContentPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
             <div className="lg:col-span-12 space-y-8">
               <div className="bg-card p-6 lg:p-8 rounded-3xl border border-border shadow-sm">
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 ml-1">Nombre de la unidad *</label>
@@ -370,7 +378,6 @@ export default function NewAIContentPage() {
 
               {creationMode === 'manual' && (
                 <div className="space-y-4">
-                  {/* DOCUMENTO PDF/URL */}
                   <div className="bg-card p-6 lg:p-8 rounded-3xl border border-border shadow-sm">
                     <div className="flex gap-3 mb-6">
                       <button
@@ -415,7 +422,6 @@ export default function NewAIContentPage() {
                     )}
                   </div>
 
-                  {/* Resumen */}
                   <div className="bg-card rounded-3xl border-2 border-emerald-500/30 shadow-sm overflow-hidden">
                     <div className="w-full p-6 lg:p-8 flex items-center justify-between bg-emerald-500/5">
                       <div className="flex items-center gap-3">
@@ -465,7 +471,7 @@ export default function NewAIContentPage() {
                               onChange={(e) => setSummaryText(e.target.value)}
                               className="w-full bg-background border-2 border-emerald-500/20 focus:border-emerald-500 rounded-xl px-5 py-3 text-sm font-medium focus:outline-none transition-all shadow-sm"
                               placeholder="Escribe aquí el resumen o descripción del contenido (soporta Markdown)..."
-                              required
+                              required={creationMode === 'manual' && summaryInputType === 'write'}
                             />
                             <p className="text-[10px] text-muted-foreground ml-1">
                               Puedes usar formato Markdown para dar estilo al texto
@@ -478,7 +484,7 @@ export default function NewAIContentPage() {
                               accept=".txt,.md"
                               className="hidden"
                               onChange={(e) => setSummaryFile(e.target.files?.[0] || null)}
-                              required
+                              required={creationMode === 'manual' && summaryInputType === 'upload'}
                             />
                             <i className={`bi bi-cloud-arrow-up text-3xl mb-2 transition-colors ${summaryFile ? 'text-emerald-500' : 'text-muted-foreground/40 group-hover:text-emerald-500/50'}`}></i>
                             <p className="text-sm font-bold text-foreground text-center">
@@ -497,26 +503,23 @@ export default function NewAIContentPage() {
                   </div>
 
                   {/* Imagen */}
-                  <Section section="image" title="IMAGEN" icon="bi-image" colorClass="bg-pink-500/10 text-pink-600 border border-pink-500/20">
+                  <Section 
+                    section="image" title="IMAGEN" icon="bi-image" colorClass="bg-pink-500/10 text-pink-600 border border-pink-500/20"
+                    openSections={openSections} toggleSection={toggleSection} hasContent={hasContent}
+                  >
                     <div className="space-y-4">
                       <div className="flex gap-2 p-1 bg-muted/30 rounded-xl">
                         <button
                           type="button"
                           onClick={() => setImageSourceType('url')}
-                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${imageSourceType === 'url'
-                            ? 'bg-pink-500 text-white shadow-sm'
-                            : 'text-muted-foreground hover:bg-muted/50'
-                            }`}
+                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${imageSourceType === 'url' ? 'bg-pink-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/50'}`}
                         >
                           <i className="bi bi-link-45deg me-1"></i> URL
                         </button>
                         <button
                           type="button"
                           onClick={() => setImageSourceType('file')}
-                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${imageSourceType === 'file'
-                            ? 'bg-pink-500 text-white shadow-sm'
-                            : 'text-muted-foreground hover:bg-muted/50'
-                            }`}
+                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${imageSourceType === 'file' ? 'bg-pink-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/50'}`}
                         >
                           <i className="bi bi-cloud-arrow-up me-1"></i> Subir imagen
                         </button>
@@ -524,81 +527,46 @@ export default function NewAIContentPage() {
 
                       {imageSourceType === 'url' ? (
                         <div>
-                          <label className="block text-[9px] font-bold uppercase text-muted-foreground mb-2 ml-1">
-                            URL de la imagen
-                          </label>
+                          <label className="block text-[9px] font-bold uppercase text-muted-foreground mb-2 ml-1">URL de la imagen</label>
                           <div className="relative">
                             <i className="bi bi-link-45deg absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base"></i>
                             <input
-                              type="url"
-                              value={imageUrl}
-                              onChange={(e) => setImageUrl(e.target.value)}
+                              type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
                               className="w-full pl-11 pr-5 py-3 bg-background border border-input rounded-xl text-sm font-medium focus:border-primary outline-none transition-all shadow-sm"
                               placeholder="https://ejemplo.com/imagen.jpg"
                             />
                           </div>
-                          {imageUrl && (
-                            <div className="mt-3 flex items-center gap-2 text-pink-500 text-xs">
-                              <i className="bi bi-check-circle-fill"></i>
-                              <span className="font-bold">URL configurada</span>
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <div>
                           <label className="border-2 border-dashed border-pink-500/30 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-pink-500/5 hover:border-pink-500 transition-all group">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                            />
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
                             <i className={`bi bi-cloud-arrow-up text-3xl mb-2 transition-colors ${imageFile ? 'text-pink-500' : 'text-muted-foreground/40 group-hover:text-pink-500/50'}`}></i>
-                            <p className="text-sm font-bold text-foreground text-center">
-                              {imageFile ? imageFile.name : "Subir imagen (JPG, PNG, WebP, GIF)"}
-                            </p>
-                            {imageFile && (
-                              <div className="mt-3 flex items-center gap-2 text-pink-500 text-xs">
-                                <i className="bi bi-check-circle-fill"></i>
-                                <span className="font-bold">Imagen lista para subir</span>
-                              </div>
-                            )}
+                            <p className="text-sm font-bold text-foreground text-center">{imageFile ? imageFile.name : "Subir imagen (JPG, PNG, WebP)"}</p>
                           </label>
-                          {imageFile && (
-                            <button
-                              type="button"
-                              onClick={() => setImageFile(null)}
-                              className="mt-2 text-[10px] text-muted-foreground hover:text-pink-500 transition-colors"
-                            >
-                              <i className="bi bi-trash3 me-1"></i> Eliminar imagen
-                            </button>
-                          )}
                         </div>
                       )}
                     </div>
                   </Section>
 
                   {/* Video */}
-                  <Section section="video" title="VIDEO" icon="bi-play-btn" colorClass="bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                  <Section 
+                    section="video" title="VIDEO" icon="bi-play-btn" colorClass="bg-purple-500/10 text-purple-600 border border-purple-500/20"
+                    openSections={openSections} toggleSection={toggleSection} hasContent={hasContent}
+                  >
                     <div className="space-y-4">
                       <div className="flex gap-2 p-1 bg-muted/30 rounded-xl">
                         <button
                           type="button"
                           onClick={() => setVideoSourceType('url')}
-                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${videoSourceType === 'url'
-                            ? 'bg-purple-500 text-white shadow-sm'
-                            : 'text-muted-foreground hover:bg-muted/50'
-                            }`}
+                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${videoSourceType === 'url' ? 'bg-purple-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/50'}`}
                         >
                           <i className="bi bi-link-45deg me-1"></i> URL
                         </button>
                         <button
                           type="button"
                           onClick={() => setVideoSourceType('file')}
-                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${videoSourceType === 'file'
-                            ? 'bg-purple-500 text-white shadow-sm'
-                            : 'text-muted-foreground hover:bg-muted/50'
-                            }`}
+                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${videoSourceType === 'file' ? 'bg-purple-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/50'}`}
                         >
                           <i className="bi bi-cloud-arrow-up me-1"></i> Subir video
                         </button>
@@ -606,169 +574,96 @@ export default function NewAIContentPage() {
 
                       {videoSourceType === 'url' ? (
                         <div>
-                          <label className="block text-[9px] font-bold uppercase text-muted-foreground mb-2 ml-1">
-                            URL del video
-                          </label>
+                          <label className="block text-[9px] font-bold uppercase text-muted-foreground mb-2 ml-1">URL del video</label>
                           <div className="relative">
                             <i className="bi bi-link-45deg absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base"></i>
                             <input
-                              type="url"
-                              value={videoUrl}
-                              onChange={(e) => setVideoUrl(e.target.value)}
+                              type="url" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)}
                               className="w-full pl-11 pr-5 py-3 bg-background border border-input rounded-xl text-sm font-medium focus:border-primary outline-none transition-all shadow-sm"
-                              placeholder="https://youtube.com/watch?v=... o URL directa .mp4"
+                              placeholder="https://youtube.com/watch?v=..."
                             />
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-2 ml-1">
-                            Soporta YouTube, Vimeo y URLs directas de video
-                          </p>
-                          {videoUrl && (
-                            <div className="mt-3 flex items-center gap-2 text-purple-500 text-xs">
-                              <i className="bi bi-check-circle-fill"></i>
-                              <span className="font-bold">URL configurada</span>
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <div>
                           <label className="border-2 border-dashed border-purple-500/30 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-purple-500/5 hover:border-purple-500 transition-all group">
-                            <input
-                              type="file"
-                              accept="video/*"
-                              className="hidden"
-                              onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                            />
+                            <input type="file" accept="video/*" className="hidden" onChange={(e) => setVideoFile(e.target.files?.[0] || null)} />
                             <i className={`bi bi-cloud-arrow-up text-3xl mb-2 transition-colors ${videoFile ? 'text-purple-500' : 'text-muted-foreground/40 group-hover:text-purple-500/50'}`}></i>
-                            <p className="text-sm font-bold text-foreground text-center">
-                              {videoFile ? videoFile.name : "Subir video (MP4, MOV, AVI, etc)"}
-                            </p>
-                            {videoFile && (
-                              <div className="mt-3 flex items-center gap-2 text-purple-500 text-xs">
-                                <i className="bi bi-check-circle-fill"></i>
-                                <span className="font-bold">Video listo para subir</span>
-                              </div>
-                            )}
+                            <p className="text-sm font-bold text-foreground text-center">{videoFile ? videoFile.name : "Subir archivo de video (.mp4, .mov)"}</p>
                           </label>
-                          {videoFile && (
-                            <button
-                              type="button"
-                              onClick={() => setVideoFile(null)}
-                              className="mt-2 text-[10px] text-muted-foreground hover:text-purple-500 transition-colors"
-                            >
-                              <i className="bi bi-trash3 me-1"></i> Eliminar video
-                            </button>
-                          )}
                         </div>
                       )}
                     </div>
                   </Section>
 
-                  {/* Presentación */}
-                  <Section section="presentation" title="PRESENTACIÓN" icon="bi-easel" colorClass="bg-orange-500/10 text-orange-600 border border-orange-500/20">
+                  <Section 
+                    section="presentation" title="PRESENTACIÓN" icon="bi-easel" colorClass="bg-orange-500/10 text-orange-600 border border-orange-500/20"
+                    openSections={openSections} toggleSection={toggleSection} hasContent={hasContent}
+                  >
                     <div className="space-y-4">
                       <div className="flex gap-2 p-1 bg-muted/30 rounded-xl">
                         <button
                           type="button"
                           onClick={() => setPresentationSourceType('url')}
-                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${presentationSourceType === 'url'
-                            ? 'bg-orange-500 text-white shadow-sm'
-                            : 'text-muted-foreground hover:bg-muted/50'
-                            }`}
+                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${presentationSourceType === 'url' ? 'bg-orange-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/50'}`}
                         >
                           <i className="bi bi-link-45deg me-1"></i> URL
                         </button>
                         <button
                           type="button"
                           onClick={() => setPresentationSourceType('file')}
-                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${presentationSourceType === 'file'
-                            ? 'bg-orange-500 text-white shadow-sm'
-                            : 'text-muted-foreground hover:bg-muted/50'
-                            }`}
+                          className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${presentationSourceType === 'file' ? 'bg-orange-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted/50'}`}
                         >
-                          <i className="bi bi-cloud-arrow-up me-1"></i> Subir presentación
+                          <i className="bi bi-cloud-arrow-up me-1"></i> Subir PPTX
                         </button>
                       </div>
 
                       {presentationSourceType === 'url' ? (
                         <div>
-                          <label className="block text-[9px] font-bold uppercase text-muted-foreground mb-2 ml-1">
-                            URL de la presentación
-                          </label>
+                          <label className="block text-[9px] font-bold uppercase text-muted-foreground mb-2 ml-1">URL de la presentación</label>
                           <div className="relative">
                             <i className="bi bi-link-45deg absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base"></i>
                             <input
-                              type="url"
-                              value={presentationUrl}
-                              onChange={(e) => setPresentationUrl(e.target.value)}
+                              type="url" value={presentationUrl} onChange={(e) => setPresentationUrl(e.target.value)}
                               className="w-full pl-11 pr-5 py-3 bg-background border border-input rounded-xl text-sm font-medium focus:border-primary outline-none transition-all shadow-sm"
-                              placeholder="https://docs.google.com/presentation/... o URL directa .pdf/.pptx"
+                              placeholder="https://docs.google.com/presentation/d/..."
                             />
                           </div>
-                          {presentationUrl && (
-                            <div className="mt-3 flex items-center gap-2 text-orange-500 text-xs">
-                              <i className="bi bi-check-circle-fill"></i>
-                              <span className="font-bold">URL configurada</span>
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <div>
                           <label className="border-2 border-dashed border-orange-500/30 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-orange-500/5 hover:border-orange-500 transition-all group">
-                            <input
-                              type="file"
-                              accept=".pdf,.pptx,.ppt"
-                              className="hidden"
-                              onChange={(e) => setPresentationFile(e.target.files?.[0] || null)}
+                            <input 
+                              type="file" 
+                              accept=".pptx,.ppt,.pdf" 
+                              className="hidden" 
+                              onChange={(e) => setPresentationFile(e.target.files?.[0] || null)} 
                             />
                             <i className={`bi bi-cloud-arrow-up text-3xl mb-2 transition-colors ${presentationFile ? 'text-orange-500' : 'text-muted-foreground/40 group-hover:text-orange-500/50'}`}></i>
                             <p className="text-sm font-bold text-foreground text-center">
-                              {presentationFile ? presentationFile.name : "Subir presentación (PDF, PPTX, PPT)"}
+                              {presentationFile ? presentationFile.name : "Subir archivo de presentación (.pptx, .ppt)"}
                             </p>
-                            {presentationFile && (
-                              <div className="mt-3 flex items-center gap-2 text-orange-500 text-xs">
-                                <i className="bi bi-check-circle-fill"></i>
-                                <span className="font-bold">Presentación lista para subir</span>
-                              </div>
-                            )}
                           </label>
-                          {presentationFile && (
-                            <button
-                              type="button"
-                              onClick={() => setPresentationFile(null)}
-                              className="mt-2 text-[10px] text-muted-foreground hover:text-orange-500 transition-colors"
-                            >
-                              <i className="bi bi-trash3 me-1"></i> Eliminar presentación
-                            </button>
-                          )}
                         </div>
                       )}
-                    </div>
-                  </Section>
-
-                  {/* Evaluación */}
-                  <Section section="quiz" title="EVALUACIÓN" icon="bi-patch-question" colorClass="bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                    <div>
-                      <div className="bg-muted/30 rounded-xl p-4 text-center">
-                        <i className="bi bi-info-circle text-muted-foreground text-sm"></i>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          Las preguntas se pueden gestionar después de crear la unidad
-                        </p>
-                      </div>
                     </div>
                   </Section>
                 </div>
               )}
 
-              <button
-                type="submit" disabled={loading || !isReady}
-                className="w-full py-4 bg-secondary text-secondary-foreground rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:opacity-90 shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-              >
-                {loading ? (
-                  <><i className="bi bi-arrow-repeat animate-spin"></i> {creationMode === 'ai' ? 'Generando...' : 'Creando...'}</>
-                ) : (
-                  <><i className={`bi ${creationMode === 'ai' ? 'bi-lightning-charge-fill' : 'bi-save'}`}></i> {creationMode === 'ai' ? 'Crear Unidad con IA' : 'Guardar Contenido Manual'}</>
-                )}
-              </button>
+              <div className="flex justify-end pt-4">
+                <button
+                  type="submit" disabled={loading || !isReady}
+                  className="px-8 py-4 bg-primary text-white rounded-2xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Procesando...
+                    </>
+                  ) : creationMode === 'ai' ? 'Generar Contenido con IA' : 'Guardar Contenido Manual'}
+                </button>
+              </div>
             </div>
           </form>
         </div>

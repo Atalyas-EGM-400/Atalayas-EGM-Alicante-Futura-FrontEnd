@@ -11,23 +11,52 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const inputClass = "w-full px-4 py-3 bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-muted-foreground/50 shadow-sm";
 
-// Variantes estandarizadas de animación
+// Estructuras de datos estrictamente tipadas
+interface ServiceData {
+  id: string;
+  title: string;
+  description: string;
+  mediaUrl: string;
+  providerName: string;
+  phone: string;
+  email: string;
+  address: string;
+  schedule: string;
+  externalUrl: string;
+  price: string;
+  isPublic: boolean;
+}
+
+interface ServiceFormData {
+  title: string;
+  description: string;
+  mediaUrl: string;
+  providerName: string;
+  phone: string;
+  email: string;
+  address: string;
+  schedule: string;
+  externalUrl: string;
+  price: string;
+}
+
+// Variantes fijadas como constantes literales para Framer Motion
 const pageVariants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
+} as const;
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 15 },
   show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
-};
+} as const;
 
 export default function AdminServiceDetail() {
   const params = useParams();
   const router = useRouter();
   const zoomRef = useRef<HTMLImageElement>(null);
 
-  const [service, setService] = useState<any>(null);
+  const [service, setService] = useState<ServiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -36,7 +65,7 @@ export default function AdminServiceDetail() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errors, setErrors] = useState<{ title?: string }>({});
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ServiceFormData>({
     title: '', description: '', mediaUrl: '',
     providerName: '', phone: '', email: '',
     address: '', schedule: '', externalUrl: '', price: '',
@@ -52,6 +81,8 @@ export default function AdminServiceDetail() {
         const data = await res.json();
         setService(data);
         hydrateForm(data);
+      } catch (err) {
+        console.error("Error cargando el servicio:", err);
       } finally {
         setLoading(false);
       }
@@ -59,12 +90,18 @@ export default function AdminServiceDetail() {
     if (params.id) fetchService();
   }, [params.id]);
 
-  const hydrateForm = (svc: any) => {
+  const hydrateForm = (svc: Partial<ServiceData>) => {
     setFormData({
-      title: svc.title || '', description: svc.description || '', mediaUrl: svc.mediaUrl || '',
-      providerName: svc.providerName || '', phone: svc.phone || '', email: svc.email || '',
-      address: svc.address || '', schedule: svc.schedule || '',
-      externalUrl: svc.externalUrl || '', price: svc.price || '',
+      title: svc.title || '',
+      description: svc.description || '',
+      mediaUrl: svc.mediaUrl || '',
+      providerName: svc.providerName || '',
+      phone: svc.phone || '',
+      email: svc.email || '',
+      address: svc.address || '',
+      schedule: svc.schedule || '',
+      externalUrl: svc.externalUrl || '',
+      price: svc.price || '',
     });
   };
 
@@ -96,6 +133,8 @@ export default function AdminServiceDetail() {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       }
+    } catch (err) {
+      console.error("Error actualizando el servicio:", err);
     } finally {
       setSaving(false);
     }
@@ -109,15 +148,23 @@ export default function AdminServiceDetail() {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       if (res.ok) router.push('/dashboard/administrator/admin/services');
+    } catch (err) {
+      console.error("Error eliminando el servicio:", err);
     } finally {
       setDeleting(false);
       setShowDeleteModal(false);
     }
   };
 
-  // Variables seguras para evitar errores cuando 'service' es null
   const canModify = service && !service.isPublic;
   const hasContactInfo = service ? !!(service.providerName || service.phone || service.email || service.address || service.externalUrl || service.price) : false;
+
+  // Generación segura de la descripción para evitar renderizar wrappers innecesarios o aserciones inválidas
+  const renderDescription = () => {
+    if (loading) return "Obteniendo datos...";
+    if (isEditing) return "Modifica los detalles del servicio corporativo.";
+    return service?.isPublic ? "Servicio oficial Atalayas EGM" : "Servicio privado de empresa";
+  };
 
   return (
     <motion.div 
@@ -126,16 +173,11 @@ export default function AdminServiceDetail() {
       animate="show"
       variants={pageVariants}
     >
-
       <main className="flex-1 flex flex-col relative w-full overflow-y-auto overflow-x-hidden no-scrollbar">
         <motion.div variants={sectionVariants}>
           <PageHeader 
-            title={loading ? "Cargando servicio..." : (isEditing ? "Editando Servicio" : service?.title)}
-            description={
-              <span className="hidden sm:block">
-                {loading ? "Obteniendo datos..." : (isEditing ? "Modifica los detalles del servicio corporativo." : (service?.isPublic ? "Servicio oficial Atalayas EGM" : "Servicio privado de empresa"))}
-              </span> as any
-            }
+            title={loading ? "Cargando servicio..." : (isEditing ? "Editando Servicio" : service?.title || '')}
+            description={renderDescription()}
             icon={<i className={`bi ${isEditing ? 'bi-pencil-square' : 'bi-briefcase-fill'}`}></i>}
             backUrl="/dashboard/administrator/admin/services"
             action={
@@ -159,7 +201,7 @@ export default function AdminServiceDetail() {
                         {saving ? <i className="bi bi-arrow-repeat animate-spin text-sm"></i> : <i className="bi bi-check-lg text-sm"></i>} 
                         <span className="hidden sm:inline">Guardar</span>
                       </button>
-                      <button onClick={() => { hydrateForm(service); setIsEditing(false); }} className="bg-card sm:bg-transparent border sm:border-none border-border text-muted-foreground hover:text-foreground hover:bg-muted sm:hover:bg-transparent w-8 h-8 sm:w-auto sm:h-auto rounded-xl sm:px-3 text-xs font-semibold transition-colors flex items-center justify-center shrink-0">
+                      <button onClick={() => { if(service) hydrateForm(service); setIsEditing(false); }} className="bg-card sm:bg-transparent border sm:border-none border-border text-muted-foreground hover:text-foreground hover:bg-muted sm:hover:bg-transparent w-8 h-8 sm:w-auto sm:h-auto rounded-xl sm:px-3 text-xs font-semibold transition-colors flex items-center justify-center shrink-0">
                         <span className="hidden sm:inline">Cancelar</span>
                         <i className="bi bi-x-lg sm:hidden text-sm"></i>
                       </button>
@@ -301,7 +343,6 @@ export default function AdminServiceDetail() {
                       )}
                     </div>
                   </aside>
-
                 </div>
               </motion.div>
             )}

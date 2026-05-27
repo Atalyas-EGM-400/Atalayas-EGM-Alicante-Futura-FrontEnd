@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from '@/components/ui/pageHeader';
-import { API_ROUTES, fetchWithApiFallback } from '@/lib/utils';
+import { API_ROUTES } from '@/lib/utils';
 
 interface CompanyData {
   id: string;
@@ -48,18 +48,12 @@ export default function EditCompanyPage() {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
 
-        if (!storedUser) {
-          setLoading(false);
-          return;
-        }
+        if (!storedUser) return;
 
         const user = JSON.parse(storedUser);
         const companyId = user.companyId ?? user.Company?.id ?? user.company?.id;
 
-        if (!companyId) {
-          setLoading(false);
-          return;
-        }
+        if (!companyId) return;
 
         const res = await fetch(API_ROUTES.COMPANIES.GET_BY_ID(companyId), {
           headers: { Authorization: `Bearer ${token}` },
@@ -69,10 +63,10 @@ export default function EditCompanyPage() {
 
         setFormData({ ...data, id: data.id ?? '' });
         setCurrentLogoUrl(data.logoUrl || null);
-
       } catch (err) {
         console.error('Error:', err);
       } finally {
+        // Un pequeño retraso para asegurar que los estados internos se asienten simultáneamente
         setLoading(false);
       }
     };
@@ -85,13 +79,10 @@ export default function EditCompanyPage() {
 
     if (file) {
       setNewFile(file);
-
       const reader = new FileReader();
-
       reader.onloadend = () => {
         setLogoPreview(reader.result as string);
       };
-
       reader.readAsDataURL(file);
     }
   };
@@ -100,55 +91,55 @@ export default function EditCompanyPage() {
     e.preventDefault();
     setSaving(true);
 
-    const updated = await res.json();
-
-    // 1. Obtener usuario actual del localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
+    try {
+      const token = localStorage.getItem('token');
+      const dataToSend = new FormData();
       
-      // 2. Actualizar la URL del logo en el objeto user (con precaución en la estructura)
-      if (user.company) {
-        user.company.logoUrl = updated.logoUrl;
-      } else if (user.Company) {
-        user.Company.logoUrl = updated.logoUrl;
-      } else {
-        // Por si acaso la estructura es plana
-        user.logoUrl = updated.logoUrl; 
+      dataToSend.append('activity', formData.activity || '');
+      dataToSend.append('description', formData.description || '');
+      dataToSend.append('contactEmail', formData.contactEmail || '');
+      dataToSend.append('contactPhone', formData.contactPhone || '');
+      dataToSend.append('address', formData.address || '');
+      
+      if (newFile) {
+        dataToSend.append('logo', newFile);
       }
-      
-      // 3. Guardar el usuario actualizado de vuelta en el localStorage
-      localStorage.setItem('user', JSON.stringify(user));
-      console.log('🟡 EditPage: localStorage sincronizado con nuevo logo');
+
+      const res = await fetch(API_ROUTES.COMPANIES.GET_BY_ID(formData.id), {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: dataToSend,
+      });
+
+      if (!res.ok) throw new Error('Error al actualizar la empresa');
+
+      const updated = await res.json();
+
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.company) user.company.logoUrl = updated.logoUrl;
+        else if (user.Company) user.Company.logoUrl = updated.logoUrl;
+        else user.logoUrl = updated.logoUrl;
+        
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+
+      window.dispatchEvent(new Event('company_logo_updated'));
+
+      if (updated.logoUrl) setCurrentLogoUrl(updated.logoUrl);
+      setNewFile(null);
+      setLogoPreview(null);
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
     }
-
-    // 4. Emitir el evento personalizado para que Sidebar lo escuche
-    console.log('🟢 EditPage: Emitiendo evento de actualización de logo...');
-    window.dispatchEvent(new Event('company_logo_updated'));
-
-
-    if (updated.logoUrl) setCurrentLogoUrl(updated.logoUrl);
-    setNewFile(null);
-    setLogoPreview(null);
-    router.refresh();
-
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setSaving(false);
-  }
-};
-
-  if (loading) return (
-    <div className="flex min-h-screen bg-background items-center justify-center font-sans">
-      <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  };
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground overflow-hidden">
-      {/* Sidebar eliminado como pediste */}
-
       <main className="flex-1 overflow-auto flex flex-col relative bg-white/40 dark:bg-transparent backdrop-blur-3xl">
         <PageHeader
           title="Perfil de Empresa"
@@ -159,41 +150,37 @@ export default function EditCompanyPage() {
         <div className="flex-1 overflow-y-auto no-scrollbar p-6 lg:p-10">
           <AnimatePresence mode="wait">
             {loading ? (
+              /* SPINNER SOLICITADO CON ANIMACIÓN SUAVE PARA EVITAR FLICKERING */
               <motion.div
-                key="loader"
+                key="spinner-loader"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex items-center justify-center h-full min-h-[400px]"
+                transition={{ duration: 0.2 }}
+                className="flex justify-center py-20"
               >
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
               </motion.div>
             ) : (
+              /* EL CONTENIDO APARECE SUAVEMENTE SOLO CUANDO LOADING ES FALSE */
               <motion.div
-                key="content"
-                initial={{ opacity: 0, y: 18 }}
+                key="form-content"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
                 className="max-w-4xl mx-auto w-full"
               >
                 <form onSubmit={handleSubmit} className="space-y-8">
                   {/* ───────────────── LOGO ───────────────── */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 }}
-                    className="bg-card border border-border rounded-[2rem] p-8 lg:p-10 shadow-sm hover:shadow-xl transition-all duration-300"
-                  >
+                  <div className="bg-card border border-border rounded-[2rem] p-8 lg:p-10 shadow-sm hover:shadow-xl transition-all duration-300">
                     <h2 className="text-xl font-bold text-foreground mb-8 tracking-tight">
                       Logo Corporativo
                     </h2>
 
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
                       {/* PREVIEW */}
-                      <div
-                        className="relative group shrink-0"
-                        title="Haz clic para subir un nuevo logo"
-                      >
+                      <div className="relative group shrink-0" title="Haz clic para subir un nuevo logo">
                         <div className="w-40 h-40 rounded-[2rem] overflow-hidden border-4 border-background shadow-xl bg-muted/20">
                           <img
                             src={
@@ -211,7 +198,6 @@ export default function EditCompanyPage() {
                             className="absolute inset-0 bg-primary/80 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer backdrop-blur-sm rounded-[2rem]"
                           >
                             <i className="bi bi-cloud-arrow-up-fill text-white text-3xl mb-1"></i>
-
                             <span className="text-white text-[10px] font-black uppercase tracking-widest">
                               Cambiar
                             </span>
@@ -233,15 +219,11 @@ export default function EditCompanyPage() {
 
                       {/* INFO */}
                       <div className="flex flex-col justify-center gap-3 text-center sm:text-left">
-                        <p className="text-sm font-bold text-foreground">
-                          Branding Corporativo
-                        </p>
-
+                        <p className="text-sm font-bold text-foreground">Branding Corporativo</p>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           Sube la imagen que representará a tu empresa en la plataforma.
                           <br />
-                          Formato recomendado: <strong>PNG o SVG</strong>, mínimo{' '}
-                          <strong>512×512 px</strong>.
+                          Formato recomendado: <strong>PNG o SVG</strong>, mínimo <strong>512×512 px</strong>.
                         </p>
 
                         <AnimatePresence>
@@ -253,9 +235,7 @@ export default function EditCompanyPage() {
                               className="flex items-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 w-fit"
                             >
                               <i className="bi bi-check-circle-fill"></i>
-
                               {newFile.name}
-
                               <button
                                 type="button"
                                 onClick={() => {
@@ -280,28 +260,20 @@ export default function EditCompanyPage() {
                         </button>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
 
-                  {/* ───────────────── DATOS ───────────────── */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-card border border-border rounded-[2rem] p-8 lg:p-10 shadow-sm relative overflow-hidden hover:shadow-xl transition-all duration-300"
-                  >
+                  {/* ───────────────── DATOS IDENTIFICATIVOS ───────────────── */}
+                  <div className="bg-card border border-border rounded-[2rem] p-8 lg:p-10 shadow-sm relative overflow-hidden hover:shadow-xl transition-all duration-300">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[100px] -z-10"></div>
-
                     <h2 className="text-xl font-bold text-foreground mb-8 tracking-tight">
                       Datos Identificativos
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                       <div>
                         <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
                           Nombre Legal
                         </label>
-
                         <input
                           type="text"
                           value={formData.name}
@@ -314,7 +286,6 @@ export default function EditCompanyPage() {
                         <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
                           CIF
                         </label>
-
                         <input
                           type="text"
                           value={formData.cif}
@@ -326,42 +297,28 @@ export default function EditCompanyPage() {
 
                     <div className="mt-8 flex items-start gap-3 bg-primary/5 border border-primary/10 p-4 rounded-2xl">
                       <i className="bi bi-info-circle-fill text-primary mt-0.5"></i>
-
                       <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                        Para modificar el nombre legal o el CIF contacta con la
-                        administración general de EGM Atalayas.
+                        Para modificar el nombre legal o el CIF contacta con la administración general de EGM Atalayas.
                       </p>
                     </div>
-                  </motion.div>
+                  </div>
 
                   {/* ───────────────── ACTIVIDAD ───────────────── */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
-                    className="bg-card border border-border rounded-[2rem] p-8 lg:p-10 shadow-sm hover:shadow-xl transition-all duration-300"
-                  >
+                  <div className="bg-card border border-border rounded-[2rem] p-8 lg:p-10 shadow-sm hover:shadow-xl transition-all duration-300">
                     <h2 className="text-xl font-bold text-foreground mb-8 tracking-tight">
                       Detalles de la Actividad
                     </h2>
 
                     <div className="space-y-6">
-
                       <div>
                         <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
                           Sector / Actividad Principal
                         </label>
-
                         <input
                           type="text"
                           placeholder="Ej: Logística, Construcción, Tecnologías de la Información..."
                           value={formData.activity || ''}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              activity: e.target.value,
-                            })
-                          }
+                          onChange={(e) => setFormData({ ...formData, activity: e.target.value })}
                           className="w-full bg-background border border-input rounded-xl px-5 py-3 text-sm font-semibold focus:border-primary outline-none transition-all shadow-sm"
                         />
                       </div>
@@ -370,53 +327,34 @@ export default function EditCompanyPage() {
                         <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
                           Descripción de la Empresa
                         </label>
-
                         <textarea
                           rows={4}
                           value={formData.description || ''}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              description: e.target.value,
-                            })
-                          }
+                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           placeholder="Breve descripción de los servicios, misión o visión de la empresa..."
                           className="w-full bg-background border border-input rounded-xl px-5 py-4 text-sm font-semibold focus:border-primary outline-none transition-all shadow-sm resize-none"
                         />
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
 
                   {/* ───────────────── CONTACTO ───────────────── */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-card border border-border rounded-[2rem] p-8 lg:p-10 shadow-sm hover:shadow-xl transition-all duration-300"
-                  >
+                  <div className="bg-card border border-border rounded-[2rem] p-8 lg:p-10 shadow-sm hover:shadow-xl transition-all duration-300">
                     <h2 className="text-xl font-bold text-foreground mb-8 tracking-tight">
                       Información de Contacto
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                       <div>
                         <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
                           Email Corporativo
                         </label>
-
                         <div className="relative">
                           <i className="bi bi-envelope absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"></i>
-
                           <input
                             type="email"
                             value={formData.contactEmail || ''}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                contactEmail: e.target.value,
-                              })
-                            }
+                            onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
                             className="w-full pl-11 pr-5 py-3 bg-background border border-input rounded-xl text-sm font-semibold focus:border-primary outline-none transition-all shadow-sm"
                             placeholder="contacto@empresa.com"
                           />
@@ -427,19 +365,12 @@ export default function EditCompanyPage() {
                         <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
                           Teléfono Principal
                         </label>
-
                         <div className="relative">
                           <i className="bi bi-telephone absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"></i>
-
                           <input
                             type="tel"
                             value={formData.contactPhone || ''}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                contactPhone: e.target.value,
-                              })
-                            }
+                            onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
                             className="w-full pl-11 pr-5 py-3 bg-background border border-input rounded-xl text-sm font-semibold focus:border-primary outline-none transition-all shadow-sm"
                             placeholder="+34 900 000 000"
                           />
@@ -450,34 +381,22 @@ export default function EditCompanyPage() {
                         <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
                           Dirección Física
                         </label>
-
                         <div className="relative">
                           <i className="bi bi-geo-alt absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"></i>
-
                           <input
                             type="text"
                             value={formData.address || ''}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                address: e.target.value,
-                              })
-                            }
+                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                             className="w-full pl-11 pr-5 py-3 bg-background border border-input rounded-xl text-sm font-semibold focus:border-primary outline-none transition-all shadow-sm"
                             placeholder="Calle, Número, Polígono, Ciudad..."
                           />
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
 
                   {/* ───────────────── BOTONES ───────────────── */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                    className="pt-4 flex justify-end items-center gap-4"
-                  >
+                  <div className="pt-4 flex justify-end items-center gap-4">
                     <button
                       type="button"
                       onClick={() => router.back()}
@@ -503,7 +422,7 @@ export default function EditCompanyPage() {
                         </>
                       )}
                     </button>
-                  </motion.div>
+                  </div>
                 </form>
               </motion.div>
             )}

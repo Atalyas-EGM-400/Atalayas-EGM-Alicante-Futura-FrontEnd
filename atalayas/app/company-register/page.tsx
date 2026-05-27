@@ -130,15 +130,14 @@ export default function RegisterCompanyPage() {
         
         {/* Cabecera / Logo */}
         <nav className="flex items-center justify-between px-8 lg:px-12 py-8 shrink-0">
-          <Link href="/login" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary shadow-lg shadow-primary/20">
-              <span className="text-primary-foreground text-lg font-extrabold">A</span>
-            </div>
-            <span className="text-foreground text-xl font-extrabold tracking-tight">Atalayas</span>
-          </Link>
-          <Link href="/login" className="text-muted-foreground hover:text-foreground text-sm font-bold transition-colors flex items-center gap-2">
-            <i className="bi bi-arrow-left"></i> Volver al login
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-15 h-15 rounded-xl flex items-center justify-center bg-white shadow-lg shadow-primary/20">
+                <img src="/favicon.ico" alt="Logo" className="w-10 h-10" />
+              </div>
+            </Link>
+            <span className="text-foreground text-xl font-bold tracking-tight">Atalayas EGM</span>
+          </div>
         </nav>
 
         {/* Contenedor Central */}
@@ -255,13 +254,13 @@ export default function RegisterCompanyPage() {
       {/* =========================================
           LADO DERECHO: IMAGEN Y BRANDING (FIJO)
       ========================================= */}
-      <div className="hidden lg:flex lg:w-[45%] relative bg-primary items-center justify-center overflow-hidden h-screen sticky top-0">
+      <div className="hidden lg:flex lg:w-[45%] bg-primary items-center justify-center overflow-hidden h-screen sticky top-0">
         <img 
           src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop" 
           alt="Edificios modernos de oficinas" 
           className="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-40 scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-primary/20"></div>
+        <div className="absolute inset-0 bg-linear-to-t from-primary/90 via-primary/50 to-primary/20"></div>
 
         <div className="relative z-10 max-w-lg p-12 animate-in fade-in zoom-in-95 duration-1000">
           <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 mb-8">

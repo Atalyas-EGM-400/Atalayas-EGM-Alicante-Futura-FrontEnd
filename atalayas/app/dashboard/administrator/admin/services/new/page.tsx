@@ -7,26 +7,45 @@ import PageHeader from '@/components/ui/pageHeader';
 import { API_ROUTES } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Interfaz para estructurar estrictamente los datos del formulario
+interface ServiceFormData {
+  title: string;
+  description: string;
+  mediaUrl: string;
+  isPublic: boolean;
+  providerName: string;
+  phone: string;
+  email: string;
+  address: string;
+  schedule: string;
+  externalUrl: string;
+  price: string;
+}
+
+// Variantes tipadas como literales constantes para evitar advertencias de Framer Motion
 const pageVariants = {
   hidden: { opacity: 0, y: 12 },
   show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut', staggerChildren: 0.08, delayChildren: 0.05 } }
-};
+} as const;
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: 'easeOut' } }
-};
+} as const;
 
 const fieldVariants = {
   hidden: { opacity: 0, y: 8 },
   show: { opacity: 1, y: 0, transition: { duration: 0.18, ease: 'easeOut' } }
-};
+} as const;
+
+const inputClass = "w-full px-5 py-3 bg-background border border-input focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-muted-foreground/40";
 
 export default function NewCompanyService() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ title?: string }>({});
-  const [formData, setFormData] = useState({
+  
+  const [formData, setFormData] = useState<ServiceFormData>({
     title: "", description: "", mediaUrl: "", isPublic: false,
     providerName: "", phone: "", email: "", address: "",
     schedule: "", externalUrl: "", price: "",
@@ -49,13 +68,15 @@ export default function NewCompanyService() {
 
       if (res.ok) {
         router.push("/dashboard/administrator/admin/services");
+      } else {
+        console.error("Error en la respuesta del servidor al crear el servicio");
       }
+    } catch (err) {
+      console.error("Error de red o servidor al enviar el formulario:", err);
     } finally {
       setLoading(false);
     }
   };
-
-  const inputClass = "w-full px-5 py-3 bg-background border border-input focus:border-primary focus:ring-4 focus:ring-primary/5 rounded-xl outline-none transition-all text-sm font-medium placeholder:text-muted-foreground/40";
 
   return (
     <motion.div

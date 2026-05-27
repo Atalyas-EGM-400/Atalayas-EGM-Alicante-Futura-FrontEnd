@@ -76,11 +76,13 @@ if (!res.ok) {
         {/* Cabecera / Logo */}
         <nav className="flex items-center px-8 lg:px-12 py-8">
           <div className="flex items-center gap-3">
-            <div className="w-15 h-15 rounded-xl flex items-center justify-center bg-white shadow-lg shadow-primary/20">
-              <img src="/favicon.ico" alt="Logo" className="w-10 h-10" />
-            </div>
-            <span className="text-foreground text-xl font-extrabold tracking-tight">
-              Atalayas
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-15 h-15 rounded-xl flex items-center justify-center bg-white shadow-lg shadow-primary/20">
+                <img src="/favicon.ico" alt="Logo" className="w-10 h-10" />
+              </div>
+            </Link>
+            <span className="text-foreground text-xl font-bold tracking-tight">
+              Atalayas EGM
             </span>
           </div>
         </nav>
@@ -154,12 +156,6 @@ if (!res.ok) {
 
             {/* Links inferiores */}
             <div className="mt-10 pt-8 border-t border-border space-y-4">
-              <p className="text-center text-muted-foreground text-sm font-medium">
-                ¿No tienes cuenta?{' '}
-                <Link href="/register" className="text-foreground font-bold hover:text-secondary hover:underline transition-all">
-                  Regístrate como empleado
-                </Link>
-              </p>
               <p className="text-center text-muted-foreground text-sm font-medium">
                 ¿Eres una empresa del polígono?{' '}
                 <Link href="/company-register" className="text-foreground font-bold hover:text-primary hover:underline transition-all">

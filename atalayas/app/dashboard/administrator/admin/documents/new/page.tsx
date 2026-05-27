@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/ui/Sidebar';
 import PageHeader from '@/components/ui/pageHeader';
 import { API_ROUTES } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 
-const pageVariants = {
+const pageVariants: Variants = {
   hidden: { opacity: 0, y: 16, filter: 'blur(6px)' },
   show: { 
     opacity: 1, 
@@ -17,22 +17,22 @@ const pageVariants = {
   }
 };
 
-const sectionVariants = {
+const sectionVariants: Variants = {
   hidden: { opacity: 0, y: 14 },
   show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } }
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 16, scale: 0.98 },
   show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.24, ease: 'easeOut' } }
 };
 
-const fieldVariants = {
+const fieldVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' } }
 };
 
-const revealVariants = {
+const revealVariants: Variants = {
   hidden: { opacity: 0, y: -8 },
   show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' } },
   exit: { opacity: 0, y: -8, transition: { duration: 0.16, ease: 'easeIn' } }

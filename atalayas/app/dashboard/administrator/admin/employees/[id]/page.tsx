@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PageHeader from "@/components/ui/pageHeader";
 import { API_ROUTES } from "@/lib/utils";
 
-// Variantes para la animación de entrada
+// Solución: Se añade 'as const' para fijar el string de la transición a un tipo literal
 const containerVariants = {
   hidden: { opacity: 0, y: 10 },
   visible: { 
@@ -14,7 +14,7 @@ const containerVariants = {
     y: 0, 
     transition: { duration: 0.4, ease: "easeOut" } 
   }
-};
+} as const;
 
 export default function EditEmployeePage() {
     const router = useRouter();
@@ -177,7 +177,6 @@ export default function EditEmployeePage() {
     if (!currentUser) return null;
 
     return (
-        /* CAMBIO: He devuelto el background a la variable 'bg-background' */
         <div className="flex min-h-screen bg-background font-sans">
             <main className="flex-1 overflow-auto flex flex-col relative">
                 <PageHeader

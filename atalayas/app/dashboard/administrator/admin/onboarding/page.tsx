@@ -307,8 +307,7 @@ export default function OnboardingConfig() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm w-9 h-9 sm:w-auto sm:h-auto sm:px-5 sm:py-2"
-              >
+className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"              >
                 {saving ? (
                   <i className="bi bi-arrow-repeat animate-spin text-lg sm:text-base"></i>
                 ) : (

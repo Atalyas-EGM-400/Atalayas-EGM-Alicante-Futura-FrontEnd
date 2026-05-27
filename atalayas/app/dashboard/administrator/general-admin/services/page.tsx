@@ -83,7 +83,7 @@ export default function ServicesPage() {
     <div className="flex items-center justify-end">
       <Link 
         href="/dashboard/administrator/general-admin/services/new"
-        className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm w-10 h-10 sm:w-auto sm:h-auto sm:px-5 sm:py-2.5 shrink-0"
+        className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
         title="Nuevo servicio"
       >
         <i className="bi bi-plus-lg text-lg sm:text-base"></i>

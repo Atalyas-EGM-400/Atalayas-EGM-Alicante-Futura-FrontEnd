@@ -13,7 +13,7 @@ function AdminCoursePageContent() {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState<any>(null);
 
-    const [visibilityTab, setVisibilityTab] = useState<"Todos" | "Público" | "Privado">("Todos");
+    const [visibilityTab, setVisibilityTab] = useState<"Todos" | "Público" | "Privado">("Público");
     const [categoryTab, setCategoryTab] = useState<"Todos" | "Onboarding" | "Especialización">("Todos");
 
     const searchParams = useSearchParams();

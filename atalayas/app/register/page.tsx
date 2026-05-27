@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
         {/* Contenedor Central */}
         <main className="flex-1 flex items-center justify-center px-6 lg:px-12 py-10">
-          <div className="w-full max-w-[400px] animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="w-full max-w-100 animate-in fade-in slide-in-from-bottom-4 duration-700">
             
             <div className="mb-10">
               <h1 className="text-3xl lg:text-4xl font-extrabold text-foreground tracking-tight mb-3">
@@ -157,13 +157,13 @@ export default function RegisterPage() {
       {/* =========================================
           LADO DERECHO: IMAGEN Y BRANDING
       ========================================= */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-primary items-center justify-center overflow-hidden h-screen sticky top-0">
+      <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center overflow-hidden h-screen sticky top-0">
         <img 
           src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop" 
           alt="Edificios modernos de oficinas" 
           className="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-40 scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-primary/30"></div>
+        <div className="absolute inset-0 bg-linear-to-t from-primary/80 via-transparent to-primary/30"></div>
 
         <div className="relative z-10 max-w-lg p-12 animate-in fade-in zoom-in-95 duration-1000">
           <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 mb-8">
