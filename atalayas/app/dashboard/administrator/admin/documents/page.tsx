@@ -157,7 +157,7 @@ export default function DocumentsExplorerPage() {
             icon={<i className="bi bi-folder-fill" />}
             action={
               <Link href="/dashboard/administrator/admin/documents/new">
-                <button className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                <button className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2 shadow-sm">
                   <i className="bi bi-plus-lg text-sm" />
                   <span className="hidden sm:inline">Subir archivo</span>
                   <span className="sm:hidden">Subir</span>

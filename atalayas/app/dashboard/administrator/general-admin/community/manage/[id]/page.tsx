@@ -82,7 +82,7 @@ export default function ManageEcosystemPage(props: { params: Promise<{ id: strin
           backUrl="/dashboard/administrator/general-admin/community"
         />
 
-        <div className="p-6 lg:p-10 flex-1 max-w-[800px] mx-auto w-full">
+        <div className="p-6 lg:p-10 flex-1 max-w-200 mx-auto w-full">
           <div className="bg-card border border-border rounded-[2.5rem] p-8 md:p-12 shadow-sm">
             
             <form onSubmit={handleSubmit} className="space-y-8">
@@ -134,7 +134,7 @@ export default function ManageEcosystemPage(props: { params: Promise<{ id: strin
                 <button type="button" onClick={() => setShowCancelModal(true)} className="px-8 py-4 rounded-2xl bg-transparent border border-border text-foreground font-bold text-xs uppercase hover:bg-muted transition-colors">
                   Cancelar
                 </button>
-                <button type="submit" disabled={loading} className="px-8 py-4 rounded-2xl bg-orange-500 text-white font-bold text-xs uppercase hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/30 min-w-[200px]">
+                <button type="submit" disabled={loading} className="px-8 py-4 rounded-2xl bg-orange-500 text-white font-bold text-xs uppercase hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/30 min-w-50">
                   {loading ? 'Guardando...' : 'Guardar Cambios'}
                 </button>
               </div>

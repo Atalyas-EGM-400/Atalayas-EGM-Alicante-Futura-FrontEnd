@@ -96,7 +96,8 @@ export default function ServicesPage() {
         </motion.div>
 
         <motion.div className="p-4 sm:p-6 lg:p-10 flex-1 max-w-7xl mx-auto w-full" variants={sectionVariants}>
-          <motion.div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col min-h-100" variants={sectionVariants}>
+          {/* SE CAMBIÓ 'min-h-100' POR 'min-h-[180px] h-auto' PARA AJUSTE DINÁMICO */}
+          <motion.div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col min-h-45 h-auto" variants={sectionVariants}>
             <div className="p-4 sm:p-5 border-b border-border flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-muted/10">
               
               <div className="flex flex-wrap gap-1 bg-card border border-border p-1 rounded-xl shadow-sm">

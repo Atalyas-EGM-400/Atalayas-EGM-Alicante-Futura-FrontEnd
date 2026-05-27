@@ -431,12 +431,12 @@ export default function AnnouncementsPage() {
 
               <button 
                 onClick={() => router.push(`/dashboard/administrator/admin/announcements/new`)}
-                className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm h-10 px-5 shrink-0"
-                title="Crear Nuevo"
+                className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
+                title="Crear Anuncio"
               >
                 <i className="bi bi-plus-lg text-lg sm:text-base"></i>
                 <span className="hidden sm:inline whitespace-nowrap">
-                  Crear Nuevo
+                  Crear Anuncio
                 </span>
               </button>
             </div>
