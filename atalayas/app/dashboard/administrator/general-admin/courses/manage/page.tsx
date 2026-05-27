@@ -16,7 +16,7 @@ export default function GlobalManageCourses() {
   // Estados de Filtros (se mantienen igual)
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'BASICO' | 'ESPECIALIZADO'>('ALL');
-  const [showOnlyPublic, setShowOnlyPublic] = useState(false);
+  const [showOnlyPublic, setShowOnlyPublic] = useState(true);
 
   // Estados para el Selector de Empresas
   const [companySearch, setCompanySearch] = useState('');
@@ -122,22 +122,27 @@ export default function GlobalManageCourses() {
 
   return (
     <div className="flex min-h-screen bg-muted/30 relative font-sans text-foreground transition-colors duration-300">
-      <Sidebar role="GENERAL_ADMIN" />
 
       <main className="flex-1 overflow-auto flex flex-col relative">
-        <PageHeader
-          title="Gestión de Cursos"
-          description={`Control maestro de contenidos para ${companies.length} empresas registradas.`}
-          icon={<i className="bi bi-gear-fill"></i>}
-          action={
-            <Link
-              href="/dashboard/administrator/general-admin/courses/manage/new"
-              className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
-            >
-              <i className="bi bi-plus-lg"></i> Nuevo curso público
-            </Link>
-          }
-        />
+       <PageHeader
+  title="Gestión de Cursos"
+  description={`Control maestro de contenidos para ${companies.length} empresas.`}
+  icon={<i className="bi bi-gear-fill"></i>}
+  action={
+    <div className="flex items-center justify-end">
+      <Link
+        href="/dashboard/administrator/general-admin/courses/manage/new"
+        className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
+        title="Nuevo curso público"
+      >
+        <i className="bi bi-plus-lg text-lg sm:text-base"></i>
+        <span className="hidden sm:inline whitespace-nowrap">
+          Nuevo curso público
+        </span>
+      </Link>
+    </div>
+  }
+/>
 
         <div className="p-6 lg:p-10 space-y-8 max-w-7xl mx-auto w-full">
 

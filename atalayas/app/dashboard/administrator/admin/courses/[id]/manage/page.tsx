@@ -25,6 +25,14 @@ export default function AdminCourseDetailPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contentToDelete, setContentToDelete] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -44,8 +52,28 @@ export default function AdminCourseDetailPage() {
     if (id) fetchCourse();
   }, [id]);
 
+  // Verificar si el usuario puede modificar el curso
+  const canModify = () => {
+    if (!course || !currentUser) return false;
+    // GENERAL_ADMIN puede modificar todo
+    if (currentUser.role === 'GENERAL_ADMIN') return true;
+    // ADMIN solo puede modificar cursos privados de su empresa
+    if (currentUser.role === 'ADMIN') {
+      return !course.isPublic && course.companyId === currentUser.companyId;
+    }
+    return false;
+  };
+
   const executeDelete = async () => {
     if (!contentToDelete) return;
+
+    // Verificar permisos antes de eliminar
+    if (!canModify()) {
+      alert("No tienes permisos para eliminar contenido de este curso");
+      setShowDeleteModal(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(API_ROUTES.CONTENT.GET_BY_ID(id as string, contentToDelete), {
@@ -58,9 +86,13 @@ export default function AdminCourseDetailPage() {
           Content: (prev.Content || prev.content).filter((c: any) => c.id !== contentToDelete),
         }));
         setShowDeleteModal(false);
+      } else {
+        const error = await res.json();
+        alert(error.message || "Error al eliminar el contenido");
       }
     } catch (error) {
       console.error("Error deleting:", error);
+      alert("Error al eliminar el contenido");
     }
   };
 
@@ -69,9 +101,12 @@ export default function AdminCourseDetailPage() {
     .filter((c: any) => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a: any, b: any) => a.order - b.order);
 
+  const isModifiable = canModify();
+  const isPublicCourse = course?.isPublic === true;
+  const isAdminView = currentUser?.role === 'ADMIN';
+
   return (
     <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden transition-colors duration-300">
-      <Sidebar role="ADMIN" />
 
       <main className="flex-1 overflow-auto flex flex-col relative">
         {loading ? (
@@ -82,12 +117,14 @@ export default function AdminCourseDetailPage() {
           <>
             <PageHeader
               title={course?.title || "Detalle del Curso"}
-              description="Gestión de contenidos y material didáctico."
+              description={isPublicCourse && isAdminView
+                ? "Curso público - Solo visualización"
+                : "Gestión de contenidos y material didáctico."}
               icon={<i className="bi bi-journal-bookmark"></i>}
               backUrl="/dashboard/administrator/admin/courses/manage"
               action={
                 <div className="flex items-center gap-2">
-                  {/* Vista Empleado: solo icono en móvil, texto completo en sm+ */}
+                  {/* Vista Empleado - siempre visible */}
                   <Link
                     href={`/dashboard/administrator/admin/courses/${id}`}
                     className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm
@@ -98,17 +135,27 @@ export default function AdminCourseDetailPage() {
                     <span className="hidden sm:inline whitespace-nowrap">Vista Empleado</span>
                   </Link>
 
-                  {/* Añadir Unidad: icono+texto compacto en móvil, completo en sm+ */}
-                  <Link
-                    href={`/dashboard/administrator/admin/courses/${id}/content/new`}
-                    className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm
-                      px-3 py-2 sm:px-7 sm:py-2"
-                    title="Añadir Unidad"
-                  >
-                    <i className="bi bi-plus-lg shrink-0"></i>
-                    <span className="hidden xs:inline sm:inline whitespace-nowrap">Añadir</span>
-                    <span className="hidden sm:inline whitespace-nowrap"> Unidad</span>
-                  </Link>
+                  {/* Añadir Unidad - solo si se puede modificar */}
+                  {isModifiable && (
+                    <Link
+                      href={`/dashboard/administrator/admin/courses/${id}/content/new`}
+                      className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm
+                        px-3 py-2 sm:px-7 sm:py-2"
+                      title="Añadir Unidad"
+                    >
+                      <i className="bi bi-plus-lg shrink-0"></i>
+                      <span className="hidden xs:inline sm:inline whitespace-nowrap">Añadir</span>
+                      <span className="hidden sm:inline whitespace-nowrap"> Unidad</span>
+                    </Link>
+                  )}
+
+                  {/* Mensaje de solo lectura para cursos públicos */}
+                  {isPublicCourse && isAdminView && !isModifiable && (
+                    <div className="bg-amber-500/10 text-amber-600 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2">
+                      <i className="bi bi-lock-fill"></i>
+                      <span className="hidden sm:inline">Solo lectura</span>
+                    </div>
+                  )}
                 </div>
               }
             />
@@ -139,8 +186,10 @@ export default function AdminCourseDetailPage() {
                     <thead>
                       <tr className="bg-muted/10 border-b border-border">
                         <th className="px-5 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Título y descripción</th>
-                        <th className="px-5 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest w-32">Tipo</th>
-                        <th className="px-5 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right w-24">Acciones</th>
+                        <th className="px-7 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest w-32">Tipo</th>
+                        {isModifiable && (
+                          <th className="px-5 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right w-24">Acciones</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -161,33 +210,32 @@ export default function AdminCourseDetailPage() {
                                 </div>
                               )}
                             </td>
-                            <td className="px-5 py-3 align-top">
-                              <div className="flex gap-1.5 mt-0.5">
-                                {content.url?.includes('.mp3') ? (
-                                  <span className="bg-indigo-500/10 text-indigo-500 text-[9px] font-black px-1.5 py-0.5 rounded border border-indigo-500/20 uppercase tracking-tighter">Podcast</span>
+                            <td className="px-2 py-3 align-top">
+                              <div className="flex gap-1.5 mt-3">
+                                {content.quiz || content.practiceLab ? (
+                                  <span className="bg-indigo-500/10 text-indigo-500 text-[9px] font-black px-1.5 py-0.5 rounded border border-indigo-500/20 uppercase tracking-tighter">Interactivo</span>
                                 ) : (
                                   <span className="bg-emerald-500/10 text-emerald-500 text-[9px] font-black px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-tighter">Lectura</span>
                                 )}
-                                {content.quiz && (
-                                  <span className="bg-muted text-muted-foreground text-[9px] font-black px-1.5 py-0.5 rounded border border-border uppercase tracking-tighter">Test</span>
-                                )}
                               </div>
                             </td>
-                            <td className="px-5 py-3 text-right align-top" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-end gap-1 mt-0.5 mr-2.5">
-                                <button
-                                  onClick={() => { setContentToDelete(content.id); setShowDeleteModal(true); }}
-                                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
-                                >
-                                  <i className="bi bi-trash3 text-xs"></i>
-                                </button>
-                              </div>
-                            </td>
+                            {isModifiable && (
+                              <td className="px-5 py-3 text-right align-top" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-1 mt-0.5 mr-2.5">
+                                  <button
+                                    onClick={() => { setContentToDelete(content.id); setShowDeleteModal(true); }}
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                                  >
+                                    <i className="bi bi-trash3 text-xs"></i>
+                                  </button>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={4} className="px-5 py-12 text-center text-muted-foreground font-medium text-xs italic bg-muted/5">
+                          <td colSpan={isModifiable ? 3 : 2} className="px-5 py-12 text-center text-muted-foreground font-medium text-xs italic bg-muted/5">
                             No hay unidades disponibles.
                           </td>
                         </tr>
@@ -228,12 +276,15 @@ export default function AdminCourseDetailPage() {
                             )}
                           </div>
                         </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setContentToDelete(content.id); setShowDeleteModal(true); }}
-                          className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all mt-0.5"
-                        >
-                          <i className="bi bi-trash3 text-sm"></i>
-                        </button>
+                        {/* Botón eliminar - solo si se puede modificar */}
+                        {isModifiable && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setContentToDelete(content.id); setShowDeleteModal(true); }}
+                            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all mt-0.5"
+                          >
+                            <i className="bi bi-trash3 text-sm"></i>
+                          </button>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -249,8 +300,8 @@ export default function AdminCourseDetailPage() {
         )}
       </main>
 
-      {/* Delete modal */}
-      {showDeleteModal && (
+      {/* Delete modal - solo visible si tiene permisos */}
+      {showDeleteModal && isModifiable && (
         <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-card w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border border-border text-center animate-in zoom-in-95">
             <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-6 text-2xl border border-destructive/20">

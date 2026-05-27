@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/ui/Sidebar";
 import PageHeader from "@/components/ui/pageHeader";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,21 +10,21 @@ export default function ManageCourses() {
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // Usamos los mismos estados que en la otra vista para mantener consistencia
-  const [filter, setFilter] = useState<"Todos" | "Onboarding" | "Especialización">("Todos");
 
-  // Estados para Eliminación
+  const [filter, setFilter] = useState<"Todos" | "Onboarding" | "Especialización">("Todos");
+  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+  const [showRoleFilter, setShowRoleFilter] = useState(false);
+
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Estados para Edición
   const [courseToEdit, setCourseToEdit] = useState<any | null>(null);
   const [updating, setUpdating] = useState(false);
 
-  // Estados para Roles
-  const [availableRoles, setAvailableRoles] = useState<string[]>([]);
-  const [loadingRoles, setLoadingRoles] = useState(false);
+  const [availableRolesForEdit, setAvailableRolesForEdit] = useState<string[]>([]);
+  const [loadingRolesForEdit, setLoadingRolesForEdit] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -58,13 +57,18 @@ export default function ManageCourses() {
       if (res.ok) {
         const data = await res.json();
         setAvailableRoles(Array.isArray(data) ? data : []);
+        setAvailableRolesForEdit(Array.isArray(data) ? data : []);
       } else {
-        console.error("Error cargando roles:", res.status);
+        // Cambiamos console.error por console.warn para evitar el Error Overlay de Next.js
+        console.warn("Aviso cargando roles:", res.status);
         setAvailableRoles(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
+        setAvailableRolesForEdit(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
       }
     } catch (err) {
-      console.error("Error cargando roles:", err);
+      // Cambiamos console.error por console.warn
+      console.warn("Aviso cargando roles:", err);
       setAvailableRoles(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
+      setAvailableRolesForEdit(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
     } finally {
       setLoadingRoles(false);
     }
@@ -98,7 +102,6 @@ export default function ManageCourses() {
 
     try {
       const token = localStorage.getItem("token");
-
       const payload: any = {
         title: courseToEdit.title,
         category: courseToEdit.category,
@@ -162,38 +165,63 @@ export default function ManageCourses() {
     }
   };
 
-  const filtered = courses.filter((c) => {
-    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase());
-    let matchesTab = true;
-    if (filter === "Onboarding") matchesTab = c.category?.toUpperCase() !== "ESPECIALIZADO";
-    if (filter === "Especialización") matchesTab = c.category?.toUpperCase() === "ESPECIALIZADO";
-    return matchesSearch && matchesTab;
-  });
+  const handleFilterChange = (newFilter: "Todos" | "Onboarding" | "Especialización") => {
+    setFilter(newFilter);
+    setSelectedRole("");
+    setShowRoleFilter(newFilter === "Especialización");
+  };
+
+  // --- MODIFICACIÓN DE FILTRADO Y ORDENAMIENTO COMPUESTO ---
+  const filteredAndSorted = courses
+    .filter((c) => {
+      const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase());
+      let matchesTab = true;
+      if (filter === "Onboarding") matchesTab = c.category?.toUpperCase() !== "ESPECIALIZADO";
+      if (filter === "Especialización") {
+        matchesTab = c.category?.toUpperCase() === "ESPECIALIZADO";
+        if (matchesTab && selectedRole) {
+          matchesTab = c.jobRole === selectedRole;
+        }
+      }
+      return matchesSearch && matchesTab;
+    })
+    .sort((a, b) => {
+      // 1. Primer Criterio: Privados primero (false -> 0) antes que Públicos (true -> 1)
+      const aPublic = a.isPublic ? 1 : 0;
+      const bPublic = b.isPublic ? 1 : 0;
+      
+      if (aPublic !== bPublic) {
+        return aPublic - bPublic;
+      }
+
+      // 2. Segundo Criterio (Si tienen la misma privacidad): Básicos (BASICO -> 0) antes que Especializados (ESPECIALIZADO -> 1)
+      const aCategory = a.category?.toUpperCase() === "ESPECIALIZADO" ? 1 : 0;
+      const bCategory = b.category?.toUpperCase() === "ESPECIALIZADO" ? 1 : 0;
+      
+      return aCategory - bCategory;
+    });
 
   return (
     <div className="flex min-h-screen bg-background font-sans relative">
-      <Sidebar role="ADMIN" />
       <main className="flex-1 overflow-auto flex flex-col relative">
         <PageHeader
           title="Gestión de Contenido"
           description="Administra los cursos de formación de tu empresa y el contenido global."
           icon={<i className="bi bi-gear-fill"></i>}
           action={
-                <div className="grid grid-cols-2 gap-2">
-              {/* Botón 1: Adaptado a móvil y con color corporativo */}
+            <div className="grid grid-cols-2 gap-2">
               <Link
                 href="/dashboard/administrator/admin/courses"
-className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm
-                      w-9 h-9 sm:w-auto sm:h-auto sm:px-5 sm:py-2"              >
+                className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm w-9 h-9 sm:w-auto sm:h-auto sm:px-5 sm:py-2"
+              >
                 <i className="bi bi-eye-fill shrink-0"></i>
-                    <span className="hidden sm:inline whitespace-nowrap">Vista Empleado</span>
+                <span className="hidden sm:inline whitespace-nowrap">Vista Empleado</span>
               </Link>
 
-              {/* Botón 2: Adaptado a móvil y con color corporativo */}
               <Link
                 href="/dashboard/administrator/admin/courses/manage/new"
-className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm
-                      w-9 h-9 sm:w-auto sm:h-auto sm:px-5 sm:py-2"              >
+                className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm w-9 h-9 sm:w-auto sm:h-auto sm:px-5 sm:py-2"
+              >
                 <i className="bi bi-plus-lg shrink-0"></i>
                 <span className="hidden sm:inline whitespace-nowrap">Nuevo Curso</span>
               </Link>
@@ -202,28 +230,63 @@ className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold u
         />
 
         <div className="p-6 lg:p-10 flex-1 max-w-7xl mx-auto w-full">
-          <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col">
-            
-            {/* Filtros y Buscador Integrados y Unificados */}
-            <div className="p-5 border-b border-border flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-muted/10">
-              
-              <div className="flex flex-wrap gap-1 bg-card border border-border p-1 rounded-xl shadow-sm w-full xl:w-auto">
-                {(["Todos", "Onboarding", "Especialización"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setFilter(tab)}
-                    className={`flex-1 xl:flex-none relative px-3 sm:px-5 py-2 text-[11px] font-medium rounded-lg transition-all ${filter === tab ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                  >
-                    <span className="relative z-10">{tab}</span>
-                    {filter === tab && (
-                      <motion.div layoutId="manageFilterPill" className="absolute inset-0 bg-primary/10 rounded-lg" />
-                    )}
-                  </button>
-                ))}
+          <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col min-h-[400px]">
+
+            <div className="p-5 border-b border-border flex flex-col lg:flex-row lg:items-center gap-4 bg-muted/10">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap gap-1 bg-card border border-border p-1 rounded-xl shadow-sm">
+                  {(["Todos", "Onboarding", "Especialización"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => handleFilterChange(tab)}
+                      className={`flex-1 lg:flex-none relative px-3 sm:px-5 py-2 text-[11px] font-medium rounded-lg transition-all ${filter === tab ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      <span className="relative z-10">{tab}</span>
+                      {filter === tab && (
+                        <motion.div layoutId="manageFilterPill" className="absolute inset-0 bg-primary/10 rounded-lg" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {showRoleFilter && (
+                    <motion.div
+                      initial={{ opacity: 0, width: 0, x: -20 }}
+                      animate={{ opacity: 1, width: "280px", x: 0 }}
+                      exit={{ opacity: 0, width: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="relative overflow-hidden"
+                    >
+                      <div className="relative min-w-70">
+                        <i className="bi bi-briefcase absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm"></i>
+                        <select
+                          value={selectedRole}
+                          onChange={(e) => setSelectedRole(e.target.value)}
+                          className="w-full bg-background border border-input rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary transition-all font-medium shadow-sm appearance-none cursor-pointer"
+                        >
+                          <option value="">Todos los roles</option>
+                          {availableRoles.map((role) => (
+                            <option key={role} value={role}>
+                              {role}
+                            </option>
+                          ))}
+                        </select>
+                        {selectedRole && (
+                          <button
+                            onClick={() => setSelectedRole("")}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <i className="bi bi-x-circle-fill text-xs"></i>
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
-              <div className="relative w-full xl:max-w-xs">
+              <div className="relative w-full lg:max-w-xs ml-auto">
                 <i className="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm"></i>
                 <input
                   type="text"
@@ -237,7 +300,7 @@ className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold u
 
             {/* Tabla */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[600px]">
+              <table className="w-full text-left border-collapse min-w-150">
                 <thead>
                   <tr className="bg-muted/40 border-b border-border">
                     <th className="px-6 lg:px-8 py-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Nombre del Curso</th>
@@ -247,7 +310,7 @@ className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold u
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {!loading && filtered.map((course) => (
+                  {!loading && filteredAndSorted.map((course) => (
                     <tr key={course.id} className="group hover:bg-muted/30 transition-colors">
                       <td className="px-6 lg:px-8 py-4">
                         <Link href={`/dashboard/administrator/admin/courses/${course.id}/manage`} className="flex items-center gap-4 cursor-pointer group/link">
@@ -309,7 +372,7 @@ className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold u
                       </td>
                     </tr>
                   ))}
-                  {!loading && filtered.length === 0 && (
+                  {!loading && filteredAndSorted.length === 0 && (
                     <tr>
                       <td colSpan={4} className="py-12 text-center text-muted-foreground">
                         <i className="bi bi-inbox text-3xl mb-3 block opacity-50"></i>
@@ -331,8 +394,6 @@ className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold u
             <h3 className="text-xl font-bold text-foreground mb-6">Editar Curso</h3>
 
             <form onSubmit={handleUpdate} className="space-y-5">
-
-              {/* Campo de Imagen */}
               <div className="space-y-2">
                 <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">Imagen de portada</label>
                 <label className="relative h-32 w-full border-2 border-dashed border-border rounded-2xl flex items-center justify-center bg-muted/30 hover:border-primary transition-all cursor-pointer group overflow-hidden">
@@ -365,7 +426,6 @@ className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold u
                 </label>
               </div>
 
-              {/* Título */}
               <div>
                 <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">Título del curso</label>
                 <input
@@ -377,7 +437,6 @@ className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold u
                 />
               </div>
 
-              {/* Categoría */}
               <div>
                 <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">Categoría</label>
                 <select
@@ -397,7 +456,6 @@ className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold u
                 </select>
               </div>
 
-              {/* Rol Requerido - Solo para especialización */}
               {courseToEdit.category === "ESPECIALIZADO" && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">
@@ -407,11 +465,11 @@ className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold u
                     value={courseToEdit.requiredRole || ""}
                     onChange={(e) => setCourseToEdit({ ...courseToEdit, requiredRole: e.target.value })}
                     className="w-full bg-background border border-input rounded-xl px-4 py-3 text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer"
-                    disabled={loadingRoles}
+                    disabled={loadingRolesForEdit}
                     required
                   >
                     <option value="">Seleccionar rol...</option>
-                    {availableRoles.map((role) => (
+                    {availableRolesForEdit.map((role) => (
                       <option key={role} value={role}>
                         {role}
                       </option>

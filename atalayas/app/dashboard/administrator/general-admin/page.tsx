@@ -106,13 +106,12 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground transition-colors duration-300">
-      <Sidebar role="GENERAL_ADMIN" />
 
       <main className="flex-1 overflow-auto flex flex-col relative">
         <PageHeader 
           title="Panel de Control Público"
           description="Gestión y supervisión de los activos visibles del ecosistema."
-          icon={<i className="bi bi-grid"></i>}
+          icon={<i className="bi bi-grid-fill"></i>}
         />
 
         <div className="p-6 lg:p-10 space-y-8 max-w-7xl mx-auto w-full">

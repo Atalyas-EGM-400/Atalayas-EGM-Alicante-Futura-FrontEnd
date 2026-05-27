@@ -20,7 +20,7 @@ const inputClass = 'w-full px-4 py-2.5 bg-background border border-border focus:
 const labelClass = 'text-[10px] font-black uppercase text-primary tracking-[0.2em] mb-2 block';
 const tabBtnClass = 'pb-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap';
 
-type TabType = 'multimedia' | 'lectura' | 'evaluacion';
+type TabType = 'presentacion' | 'multimedia' | 'lectura' | 'evaluacion';
 
 export default function GeneralAdminContentDetail() {
   const params = useParams();
@@ -113,7 +113,6 @@ export default function GeneralAdminContentDetail() {
 
   return (
     <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden">
-      <Sidebar role="GENERAL_ADMIN" />
 
       <main className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
         <PageHeader
@@ -131,7 +130,7 @@ export default function GeneralAdminContentDetail() {
               <button
                 onClick={isEditing ? handleSave : () => setIsEditing(true)}
                 disabled={loading}
-                className={`${isEditing ? 'bg-emerald-500' : 'bg-primary'} text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95`}
+                className={`${isEditing ? 'bg-emerald-500' : "bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"} text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95`}
               >
                 {isEditing ? 'Guardar' : 'Editar'}
               </button>
@@ -273,6 +272,7 @@ export default function GeneralAdminContentDetail() {
                         </button>
                       </div>
                     )}
+                    
                   </div>
                 )}
               </div>
@@ -322,6 +322,24 @@ export default function GeneralAdminContentDetail() {
               </a>
             )}
 
+             {content?.presentationUrl && (
+              <a
+                href={content.presentationUrl}
+                target="_blank"
+                className="group w-full p-4 bg-orange-500/5 border border-orange-500/10 rounded-xl flex items-center gap-4 hover:border-orange-500 transition-all"
+              >
+                <div className="w-10 h-10 bg-orange-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
+                  <i className="bi bi-easel text-xl"></i>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black uppercase text-orange-500">
+                    PowerPoint IA
+                  </p>
+                  <p className="text-xs font-bold">Descargar Presentación</p>
+                </div>
+              </a>
+            )}
+            
             {content?.practiceLab && (
               <button onClick={() => setShowLabModal(true)} className="group w-full p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl flex items-center gap-4 hover:border-blue-500 transition-all text-left">
                 <div className="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/20">
@@ -345,9 +363,9 @@ export default function GeneralAdminContentDetail() {
 
       {/* Modal Lab */}
       {showLabModal && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 backdrop-blur-xl md:p-4">
+        <div className="fixed inset-0 z-120 flex items-center justify-center bg-black/95 backdrop-blur-xl md:p-4">
           <div className="bg-card border border-border md:rounded-[40px] w-full max-w-6xl h-full md:h-[90vh] relative overflow-hidden shadow-2xl flex flex-col">
-            <div className="absolute top-4 right-4 z-[130]">
+            <div className="absolute top-4 right-4 z-130">
               <button onClick={() => { setShowLabModal(false); setIsLabStarted(false); }} className="w-10 h-10 bg-white/10 hover:bg-destructive hover:text-white backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all shadow-lg">
                 <i className="bi bi-x-lg"></i>
               </button>
@@ -378,7 +396,7 @@ export default function GeneralAdminContentDetail() {
 
       {/* Modal Quiz */}
       {showQuizModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-3 md:p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-md p-3 md:p-4">
           <div className="bg-card border border-border rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
             <div className="flex justify-between items-center mb-6 md:mb-8 shrink-0">
               <h3 className="text-xl md:text-2xl font-black italic">Simulación Estudiante</h3>
@@ -407,7 +425,7 @@ export default function GeneralAdminContentDetail() {
 
       {/* Modal Delete */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-card border border-border rounded-[1.5rem] md:rounded-[2rem] p-8 md:p-10 max-w-sm w-full text-center shadow-2xl">
             <i className="bi bi-exclamation-triangle text-4xl text-destructive mb-4 block"></i>
             <h3 className="text-xl font-black mb-2">¿Seguro que deseas borrar?</h3>

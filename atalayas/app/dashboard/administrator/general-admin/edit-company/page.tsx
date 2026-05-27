@@ -46,11 +46,9 @@ export default function CompanyProfilePage() {
         const user = JSON.parse(storedUser);
         setCurrentUser(user);
 
-        // Cargamos únicamente la empresa asociada al perfil del usuario actual
         if (user.companyId) {
           setSelectedCompanyId(user.companyId);
         } else {
-          // Si el usuario no tiene empresa asociada (caso raro para un admin)
           setError('No tienes una empresa asociada a tu cuenta.');
         }
       } catch (err) {
@@ -63,41 +61,72 @@ export default function CompanyProfilePage() {
   }, [router]);
 
   useEffect(() => {
-    if (!selectedCompanyId) return;
+  if (!selectedCompanyId) {
+    setFetching(false);
+    return;
+  }
 
-    const fetchCompanyData = async () => {
-      setFetching(true);
-      setError('');
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_ROUTES.COMPANIES.GET_ALL}/${selectedCompanyId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (!res.ok) throw new Error('No se pudieron obtener los datos de la empresa');
-        
-        const company = await res.json();
-        setName(company.name || '');
-        setAddress(company.address || '');
-        setDescription(company.description || '');
-        setWebsite(company.website || '');
-        setContactEmail(company.contactEmail || '');
-        setContactPhone(company.contactPhone || '');
-        setCif(company.cif || '');
-        setActivity(company.activity || '');
-        setCurrentLogoUrl(company.logoUrl || null);
-        setNewFile(null);
-        setLogoPreview(null);
-        
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
+  // Creamos un controlador para poder abortar la petición si el componente se desmonta
+  const controller = new AbortController();
+
+  const fetchCompanyData = async () => {
+    setFetching(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Control de seguridad: Si no hay token, no disparamos la petición y evitamos el cuelgue
+      if (!token) {
+        throw new Error('Sesión expirada o sin token válido. Por favor, inicia sesión.');
+      }
+
+      const res = await fetch(`${API_ROUTES.COMPANIES.GET_ALL}/${selectedCompanyId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        signal: controller.signal // Vinculamos el controlador de aborto
+      });
+      
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new Error('No tienes permisos para ver esta empresa o el token ha expirado.');
+        }
+        throw new Error(`Error del servidor: ${res.status} - No se pudieron obtener los datos.`);
+      }
+      
+      const company = await res.json();
+      setName(company.name || '');
+      setAddress(company.address || '');
+      setDescription(company.description || '');
+      setWebsite(company.website || '');
+      setContactEmail(company.contactEmail || '');
+      setContactPhone(company.contactPhone || '');
+      setCif(company.cif || '');
+      setActivity(company.activity || '');
+      setCurrentLogoUrl(company.logoUrl || null);
+      setNewFile(null);
+      setLogoPreview(null);
+      
+    } catch (err: any) {
+      // Si la petición fue abortada intencionadamente por React, no actualizamos el estado de error
+      if (err.name !== 'AbortError') {
+        console.error("Error cargando empresa:", err);
+        setError(err.message || 'Error de conexión con el servidor.');
+      }
+    } finally {
+      // Al usar el AbortController, verificamos que no estemos en una petición cancelada
+      if (!controller.signal.aborted) {
         setFetching(false);
       }
-    };
+    }
+  };
 
-    fetchCompanyData();
-  }, [selectedCompanyId]);
+  fetchCompanyData();
+
+  // Función de limpieza: si el id cambia o el usuario navega a otra página, cancelamos el fetch antiguo
+  return () => {
+    controller.abort();
+  };
+}, [selectedCompanyId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -138,6 +167,7 @@ export default function CompanyProfilePage() {
       const data = await res.json();
       if (!res.ok) throw new Error('Error al actualizar el perfil');
 
+      // Actualizamos la persistencia local de sesión
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         const userObj = JSON.parse(storedUser);
@@ -145,8 +175,17 @@ export default function CompanyProfilePage() {
         localStorage.setItem('user', JSON.stringify(userObj));
       }
 
+      // Sincronizamos el estado de la UI reactivamente para no necesitar recargar la página entera
+      if (data.logoUrl) {
+        setCurrentLogoUrl(data.logoUrl);
+      }
+      setNewFile(null);
+      setLogoPreview(null);
+
       setSuccess('Perfil corporativo actualizado correctamente.');
-      setTimeout(() => window.location.reload(), 1500);
+      
+      // Limpiamos el mensaje de éxito automáticamente tras 3 segundos
+      setTimeout(() => setSuccess(''), 3000);
 
     } catch (err: any) {
       setError(err.message);
@@ -168,7 +207,6 @@ export default function CompanyProfilePage() {
 
   return (
     <div className="flex min-h-screen bg-muted/30 font-sans text-foreground transition-colors duration-300">
-      <Sidebar role={currentUser.role} />
       
       <main className="flex-1 overflow-auto flex flex-col relative">
         
@@ -176,14 +214,26 @@ export default function CompanyProfilePage() {
           title="Perfil de Empresa"
           description="Gestión integral de la identidad y datos operativos de tu organización."
           icon={<i className="bi bi-building-fill"></i>}
-          // El selector de empresas (action) ha sido eliminado para mostrar solo la propia
         />
 
         <div className="p-6 lg:p-10 flex-1 flex justify-center w-full">
           <div className="w-full max-w-5xl">
             
-            <form onSubmit={handleSubmit} className={`bg-card rounded-[32px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-border/60 p-8 lg:p-14 space-y-12 transition-all duration-500 ${fetching ? 'opacity-40 blur-sm pointer-events-none' : 'opacity-100'}`}>
+            <form 
+              onSubmit={handleSubmit} 
+              className="bg-card rounded-[32px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-border/60 p-8 lg:p-14 space-y-12 relative"
+            >
               
+              {/* CAPA DE CARGA Y SPINNER */}
+              {(loading || fetching) && (
+  <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-card/60 rounded-[32px] backdrop-blur-md animate-in fade-in duration-300">
+    <div className="w-12 h-12 border-4 border-secondary border-t-transparent rounded-full animate-spin"></div>
+    <p className="text-xs font-black uppercase tracking-[0.2em] text-secondary">
+      {fetching ? 'Cargando empresa...' : 'Actualizando perfil corporativo...'}
+    </p>
+  </div>
+)}
+
               {error && <div className="p-5 bg-destructive/5 border border-destructive/20 rounded-[20px] text-destructive font-black text-[11px] uppercase tracking-widest flex items-center gap-3 animate-in slide-in-from-top-2"><i className="bi bi-exclamation-octagon-fill text-lg"></i> {error}</div>}
               {success && <div className="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-[20px] text-emerald-600 font-black text-[11px] uppercase tracking-widest flex items-center gap-3 animate-in slide-in-from-top-2"><i className="bi bi-check-circle-fill text-lg"></i> {success}</div>}
 

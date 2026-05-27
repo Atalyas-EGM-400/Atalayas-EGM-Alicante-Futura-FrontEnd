@@ -80,7 +80,6 @@ function EmployeeCoursesContent() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground">
-      <Sidebar role="EMPLOYEE" />
 
       <main className="flex-1 overflow-auto flex flex-col relative">
         <PageHeader

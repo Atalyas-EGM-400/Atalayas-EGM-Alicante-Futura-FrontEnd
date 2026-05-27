@@ -1,141 +1,263 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Sidebar from '@/components/ui/Sidebar';
-import PageHeader from '@/components/ui/pageHeader'; // Importamos el header
-import Link from 'next/link';
+import PageHeader from '@/components/ui/pageHeader';
 import { API_ROUTES } from '@/lib/utils';
-import SearchInput from '@/components/ui/Searchbar';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 
-export default function GeneralAdminCourses() {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'BASICO' | 'ESPECIALIZADO'>('BASICO');
-  const [searchQuery, setSearchQuery] = useState('');
+function AdminCoursePageContent() {
+    const [courses, setCourses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(API_ROUTES.COURSES.GET_ALL, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        const data = await res.json();
-        setCourses(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+    const [visibilityTab, setVisibilityTab] = useState<"Todos" | "Público" | "Privado">("Público");
+    const [categoryTab, setCategoryTab] = useState<"Todos" | "Onboarding" | "Especialización">("Todos");
+
+    const searchParams = useSearchParams();
+    const fromTaskId = searchParams.get('fromTask');
+
+    const downloadCertificate = async (courseId: string) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(
+                `${API_ROUTES.ENROLLMENTS.BASE}/certificate/${courseId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!res.ok) return;
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'certificado.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error:', error);
+        }
     };
-    fetchData();
-  }, []);
 
-  const filtered = courses.filter(c => {
-    const matchesTab = activeTab === 'BASICO'
-      ? (c.category?.toUpperCase() !== 'ESPECIALIZADO')
-      : (c.category?.toUpperCase() === 'ESPECIALIZADO');
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setCurrentUser(JSON.parse(storedUser));
+        }
+    }, []);
 
-    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase());
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-    return matchesTab && matchesSearch;
-  });
+                let url = API_ROUTES.ENROLLMENTS.BASE;
+                let isAdmin = user.role === 'ADMIN' || user.role === 'GENERAL_ADMIN';
 
-  return (
-    // bg-muted/30 para dar contraste premium
-    <div className="flex min-h-screen bg-muted/30 font-sans text-foreground transition-colors duration-300">
-      <Sidebar role="GENERAL_ADMIN" />
+                if (isAdmin) {
+                    url = API_ROUTES.COURSES.GET_ALL;
+                }
 
-      <main className="flex-1 overflow-auto flex flex-col relative">
-        {/* ── HEADER PREMIUM ── */}
-        <PageHeader 
-          title="Catálogo Maestro"
-          description="Configura la oferta formativa global del sistema."
-          icon={<i className="bi bi-journal-bookmark"></i>}
-          action={
-            <div className="flex items-center gap-4">
-              <SearchInput
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder='Buscar cursos...'
-              />
-              <Link
-                href="/dashboard/administrator/general-admin/courses/manage"
-                className="bg-secondary text-white px-6 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-sm shrink-0 text-xs uppercase tracking-wider"
-              >
-                Vista Global
-              </Link>
-            </div>
-          }
-        />
+                const res = await fetch(url, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
 
-        <div className="p-6 lg:p-10 flex-1 max-w-7xl mx-auto w-full">
-          
-          {/* TABS (Ajustados para el look premium) */}
-          <div className="flex gap-8 border-b border-border/60 mb-8 overflow-x-auto no-scrollbar">
-            {['BASICO', 'ESPECIALIZADO'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
-                className={`pb-4 text-xs font-black uppercase tracking-[0.15em] cursor-pointer transition-all whitespace-nowrap ${activeTab === tab
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                {tab === 'BASICO' ? 'Onboarding' : 'Especialización'}
-              </button>
-            ))}
-          </div>
+                let rawCourses = [];
+                if (isAdmin) {
+                    rawCourses = Array.isArray(data) ? data : [];
+                } else {
+                    rawCourses = Array.isArray(data) ? data : (data.courses || []);
+                }
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="h-64 bg-card rounded-[24px] animate-pulse border border-border/60" />
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-24 bg-card rounded-[24px] border border-dashed border-border/60 shadow-sm">
-              <div className="text-4xl text-muted-foreground/30 mb-4"><i className="bi bi-journal-x"></i></div>
-              <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest">No se han encontrado cursos en esta sección</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filtered.map((course) => (
-                <div 
-                  key={course.id} 
-                  className="bg-card rounded-[24px] p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.04)] border border-border/60 flex flex-col justify-between group hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 ease-out"
-                >
-                  <div>
-                    <div className="flex justify-between items-start mb-6">
-                      <span className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border ${activeTab === 'BASICO' ? 'bg-primary/5 text-primary border-primary/10' : 'bg-secondary/5 text-secondary border-secondary/10'}`}>
-                        {activeTab === 'BASICO' ? 'Onboarding' : 'Especialización'}
-                      </span>
+                const sortedDataCourses = [...rawCourses].sort((a: any, b: any) =>
+                    (a.title || "").trim().localeCompare((b.title || "").trim(), undefined, { numeric: true })
+                );
+                setCourses(sortedDataCourses);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCourses();
+    }, []);
+
+    const filtered = courses.filter((c) => {
+        if (visibilityTab === "Público" && !c.isPublic) return false;
+        if (visibilityTab === "Privado" && c.isPublic) return false;
+        if (categoryTab === "Onboarding") return c.category?.toUpperCase() !== "ESPECIALIZADO";
+        if (categoryTab === "Especialización") return c.category?.toUpperCase() === "ESPECIALIZADO";
+        return true;
+    });
+
+    return (
+        <div className="flex min-h-screen bg-background font-sans text-foreground">
+
+            <main className="flex-1 overflow-auto flex flex-col relative">
+                <PageHeader
+                    title="Formación"
+                    description="Gestión y visualización de todos los cursos disponibles en la plataforma."
+                    icon={<i className="bi bi-journal-bookmark-fill"></i>}
+                    action={
+                        <Link href="/dashboard/administrator/general-admin/courses/manage"
+                  className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm w-full"
+                        >
+                            <i className="bi bi-eye-fill text-sm"></i>
+                            <span className="hidden sm:inline">Vista de Administrador</span>
+                            <span className="sm:hidden">Gestionar</span>
+                        </Link>
+                    }
+                />
+
+                <div className="p-6 lg:p-10 flex-1 space-y-6">
+
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                        <div className="flex flex-wrap gap-1 bg-card border border-border p-1 rounded-xl shadow-sm w-full lg:w-auto">
+                            {(["Todos", "Privado", "Público"] as const).map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => {
+                                        setVisibilityTab(tab);
+                                        if (tab !== "Privado") setCategoryTab("Todos");
+                                    }}
+                                    className={`flex-1 lg:flex-none relative px-3 sm:px-5 py-2 text-[11px] font-medium rounded-lg transition-all ${visibilityTab === tab ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                    <span className="relative z-10">{tab}</span>
+                                    {visibilityTab === tab && (
+                                        <motion.div layoutId="visPillCourses" className="absolute inset-0 bg-primary/10 rounded-lg" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+
+                        <AnimatePresence>
+                            {visibilityTab === "Privado" && (
+                                <motion.div
+                                    initial={{ opacity: 0, width: 0, height: 0 }}
+                                    animate={{ opacity: 1, width: "auto", height: "auto" }}
+                                    exit={{ opacity: 0, width: 0, height: 0 }}
+                                    className="overflow-hidden w-full lg:w-auto"
+                                >
+                                    <div className="flex flex-wrap gap-1 bg-card/50 border border-border/50 p-1 rounded-xl">
+                                        {(["Todos", "Onboarding", "Especialización"] as const).map((tab) => (
+                                            <button
+                                                key={tab}
+                                                onClick={() => setCategoryTab(tab)}
+                                                className={`flex-1 lg:flex-none relative px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] font-medium rounded-lg transition-all ${categoryTab === tab ? "text-secondary" : "text-muted-foreground hover:text-foreground"}`}
+                                            >
+                                                <span className="relative z-10">{tab}</span>
+                                                {categoryTab === tab && (
+                                                    <motion.div layoutId="catPillCourses" className="absolute inset-0 bg-secondary/10 rounded-lg" />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
-                    <div className={`w-12 h-12 rounded-[18px] flex items-center justify-center text-xl mb-5 transition-all duration-300 border border-border/50 ${activeTab === 'BASICO' ? 'bg-muted text-primary group-hover:bg-primary group-hover:text-white shadow-sm' : 'bg-muted text-secondary group-hover:bg-secondary group-hover:text-white shadow-sm'}`}>
-                      {activeTab === 'BASICO' ? (
-                        <i className="bi bi-book"></i>
-                      ) : (
-                        <i className="bi bi-mortarboard"></i>
-                      )}
-                    </div>
+                    <hr className="border-border/50" />
 
-                    <h3 className="text-foreground font-bold text-base leading-tight mb-6 line-clamp-2 min-h-10 group-hover:text-primary transition-colors">
-                      {course.title}
-                    </h3>
-                  </div>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={`${visibilityTab}-${categoryTab}`}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8"
+                        >
+                            {loading ? (
+                                Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={i} className="h-87.5 bg-card rounded-[2.5rem] border border-border animate-pulse shadow-sm" />
+                                ))
+                            ) : filtered.length === 0 ? (
+                                <div className="col-span-full py-20 text-center bg-card border-2 border-dashed border-border rounded-[2.5rem]">
+                                    <i className="bi bi-search text-3xl text-muted-foreground mb-4 block"></i>
+                                    <p className="text-muted-foreground font-bold">No se encontraron cursos con estos filtros</p>
+                                </div>
+                            ) : (
+                                filtered.map((course) => {
+                                    const isBasico = course.category?.toUpperCase() !== "ESPECIALIZADO";
+                                    return (
+                                        <div key={course.id} className="group bg-card rounded-[2.5rem] border border-border shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500 flex flex-col overflow-hidden relative">
+                                            <div className="relative aspect-16/10 overflow-hidden bg-muted">
+                                                {course.fileUrl ? (
+                                                    <img src={course.fileUrl} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                                ) : (
+                                                    <div className={`w-full h-full flex items-center justify-center text-4xl ${isBasico ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary"}`}>
+                                                        <i className={`bi ${isBasico ? "bi-compass" : "bi-rocket-takeoff"}`}></i>
+                                                    </div>
+                                                )}
+                                                <div className="absolute top-4 left-4 flex gap-2 flex-wrap pr-4">
+                                                    <span className={`text-[9px] font-semibold px-2 py-1 rounded-md border backdrop-blur-md ${course.isPublic ? "bg-green-500/20 text-green-600 border-green-500/20" : "bg-blue-500/20 text-blue-600 border-blue-500/20"}`}>
+                                                        {course.isPublic ? "Público" : "Privado"}
+                                                    </span>
+                                                    {!isBasico && course.jobRole && (
+                                                        <span className="text-[9px] font-semibold px-2 py-1 rounded-md border bg-purple-500/20 text-purple-600 border-purple-500/20 backdrop-blur-md">
+                                                            <i className="bi bi-person-badge mr-1"></i>
+                                                            {course.jobRole}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
 
-                  <Link
-                    href={`/dashboard/administrator/general-admin/courses/${course.id}`}
-                    className="w-full py-3 bg-primary text-white text-[11px] font-black uppercase tracking-widest rounded-xl text-center hover:opacity-90 transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
-                  >
-                    Gestionar Curso
-                  </Link>
+                                            <div className="p-7 flex-1 flex flex-col">
+                                                <h3 className="text-base font-bold text-foreground leading-tight mb-2 line-clamp-2">{course.title}</h3>
+                                                <div className="mb-6">
+                                                    <div className="flex justify-between text-[10px] font-semibold text-muted-foreground mb-1">
+                                                        <span>Progreso</span>
+                                                        <span>{course.progress || 0}%</span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${course.progress || 0}%` }}
+                                                            className={`h-full ${course.progress === 100 ? "bg-green-500" : "bg-primary"}`}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="mt-auto space-y-2">
+                                                    <Link
+                                                        href={`/dashboard/administrator/general-admin/courses/${course.id}`}
+                                                        className="flex items-center justify-center gap-2 w-full py-3 bg-foreground text-background dark:bg-muted dark:text-foreground text-[11px] font-semibold rounded-xl transition-all hover:opacity-90 active:scale-[0.98]"
+                                                    >
+                                                        Entrar <i className="bi bi-arrow-right"></i>
+                                                    </Link>
+                                                    {course.progress === 100 && (
+                                                        <button
+                                                            onClick={() => downloadCertificate(course.id)}
+                                                            className="w-full py-3 bg-orange-500 text-white text-[11px] font-semibold rounded-xl transition-all hover:bg-orange-600"
+                                                        >
+                                                            Descargar Diploma
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
-              ))}
-            </div>
-          )}
+            </main>
         </div>
-      </main>
-    </div>
-  );
+    );
+}
+
+export default function AdminCoursePage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen bg-background items-center justify-center">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        }>
+            <AdminCoursePageContent />
+        </Suspense>
+    );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Sidebar from "@/components/ui/Sidebar";
 import PageHeader from "@/components/ui/pageHeader";
@@ -25,6 +25,70 @@ export default function EditEmployeePage() {
     const [fetching, setFetching] = useState(true);
     const [error, setError] = useState('');
     const [currentUser, setCurrentUser] = useState<any>(null);
+
+    // Estados para autocompletado de puestos
+    const [availableJobRoles, setAvailableJobRoles] = useState<string[]>([]);
+    const [filteredJobRoles, setFilteredJobRoles] = useState<string[]>([]);
+    const [showJobRoleSuggestions, setShowJobRoleSuggestions] = useState(false);
+    const [loadingRoles, setLoadingRoles] = useState(false);
+    const jobRoleInputRef = useRef<HTMLInputElement>(null);
+    const suggestionsRef = useRef<HTMLDivElement>(null);
+
+    // Cargar roles existentes
+    useEffect(() => {
+        const fetchJobRoles = async () => {
+            setLoadingRoles(true);
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) return;
+
+                const res = await fetch(`${API_ROUTES.USERS.GET_ALL}/roles`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setAvailableJobRoles(Array.isArray(data) ? data : []);
+                }
+            } catch (err) {
+                console.error("Error cargando puestos:", err);
+            } finally {
+                setLoadingRoles(false);
+            }
+        };
+
+        fetchJobRoles();
+    }, []);
+
+    // Filtrar sugerencias basadas en el texto ingresado
+    useEffect(() => {
+        if (formData.jobRole.trim() === "") {
+            setFilteredJobRoles([]);
+            return;
+        }
+
+        const filtered = availableJobRoles.filter(role =>
+            role.toLowerCase().includes(formData.jobRole.toLowerCase())
+        );
+        setFilteredJobRoles(filtered);
+    }, [formData.jobRole, availableJobRoles]);
+
+    // Cerrar sugerencias al hacer clic fuera
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                suggestionsRef.current &&
+                !suggestionsRef.current.contains(event.target as Node) &&
+                jobRoleInputRef.current &&
+                !jobRoleInputRef.current.contains(event.target as Node)
+            ) {
+                setShowJobRoleSuggestions(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Carga inicial: Usuario actual y datos del empleado a editar
     useEffect(() => {
@@ -93,7 +157,7 @@ export default function EditEmployeePage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Error al actualizar");
 
-            router.push("/dashboard/administrator/employees");
+            router.push("/dashboard/administrator/general-admin/employees");
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -114,14 +178,13 @@ export default function EditEmployeePage() {
 
     return (
         <div className="flex min-h-screen bg-background font-sans">
-            <Sidebar role={currentUser.role} />
 
             <main className="flex-1 overflow-auto flex flex-col relative">
                 <PageHeader
                     title="Editar Perfil"
                     description={`Modificando la cuenta de ${formData.name || 'empleado'}`}
                     icon={<i className="bi bi-person-gear"></i>}
-                    backUrl="/dashboard/administrator/employees"
+                    backUrl="/dashboard/administrator/general-admin/employees"
                 />
 
                 <div className="p-6 lg:p-10 max-w-3xl mx-auto w-full">
@@ -178,18 +241,49 @@ export default function EditEmployeePage() {
                                     />
                                 </div>
 
-                                {/* Puesto/JobRole */}
-                                <div className="space-y-2">
+                                {/* Puesto/JobRole con autocompletado */}
+                                <div className="relative space-y-2">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 ml-1">
                                         Puesto / Cargo
                                     </label>
                                     <input
+                                        ref={jobRoleInputRef}
                                         type="text"
                                         value={formData.jobRole}
-                                        onChange={e => setFormData({ ...formData, jobRole: e.target.value })}
+                                        onChange={e => {
+                                            setFormData({ ...formData, jobRole: e.target.value });
+                                            setShowJobRoleSuggestions(true);
+                                        }}
+                                        onFocus={() => setShowJobRoleSuggestions(true)}
                                         className="w-full bg-background border border-input rounded-xl px-5 py-3 text-sm font-semibold focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all shadow-sm"
                                         placeholder="Ej: Gerente de Ventas"
                                     />
+
+                                    {/* Sugerencias de puestos */}
+                                    {showJobRoleSuggestions && filteredJobRoles.length > 0 && (
+                                        <div
+                                            ref={suggestionsRef}
+                                            className="absolute z-10 left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto"
+                                        >
+                                            {filteredJobRoles.map((role, index) => (
+                                                <button
+                                                    key={index}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData({ ...formData, jobRole: role });
+                                                        setShowJobRoleSuggestions(false);
+                                                    }}
+                                                    className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl font-medium"
+                                                >
+                                                    {role}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <p className="text-[9px] text-muted-foreground ml-1">
+                                        Puedes seleccionar un puesto existente o escribir uno nuevo
+                                    </p>
                                 </div>
 
                                 {/* Rol de Sistema */}

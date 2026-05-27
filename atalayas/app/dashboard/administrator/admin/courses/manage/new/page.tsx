@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/ui/Sidebar";
 import PageHeader from "@/components/ui/pageHeader";
 import { API_ROUTES } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+
+// Se añade 'as const' para que TypeScript infiera "easeOut" como un tipo literal exacto
+const sectionVariants = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } }
+} as const;
 
 export default function NewCoursePage() {
   const router = useRouter();
@@ -26,7 +33,6 @@ export default function NewCoursePage() {
     ? JSON.parse(localStorage.getItem("user") || '{"companyId": null}')
     : { companyId: null };
 
-  // Cargar roles disponibles desde los empleados existentes
   useEffect(() => {
     const fetchAvailableRoles = async () => {
       setLoadingRoles(true);
@@ -66,22 +72,21 @@ export default function NewCoursePage() {
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Validaciones
-    if (!formData.title.trim()) {
-      alert("El título es obligatorio");
-      return;
-    }
+  if (!formData.title.trim()) {
+    alert("El título es obligatorio");
+    return;
+  }
 
-    // Validar que si es especialización, tenga un rol seleccionado
-    if (formData.category === "ESPECIALIZADO" && !formData.requiredRole) {
-      alert("Para cursos de especialización, debes seleccionar un rol requerido");
-      return;
-    }
+  if (formData.category === "ESPECIALIZADO" && !formData.requiredRole) {
+    alert("Para cursos de especialización, debes seleccionar un rol requerido");
+    return;
+  }
 
-    setLoading(true);
-    setLoadingStep("Iniciando creación...");
+  //  Cambia 'loading(true)' por 'setLoading(true)'
+  setLoading(true); 
+  setLoadingStep("Iniciando creación...");
 
     try {
       const token = localStorage.getItem("token");
@@ -90,7 +95,6 @@ export default function NewCoursePage() {
         throw new Error("No hay sesión iniciada");
       }
 
-      // Crear FormData para enviar archivo
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
       formDataToSend.append("isPublic", String(formData.isPublic));
@@ -104,9 +108,6 @@ export default function NewCoursePage() {
       if (formData.imageFile) {
         formDataToSend.append("file", formData.imageFile);
       }
-
-      console.log("Enviando datos...");
-      console.log("URL:", API_ROUTES.COURSES.CREATE);
 
       setLoadingStep("Creando curso...");
       const resCourse = await fetch(API_ROUTES.COURSES.CREATE, {
@@ -123,11 +124,8 @@ export default function NewCoursePage() {
         throw new Error(`Error al crear el curso: ${resCourse.status}`);
       }
 
-      const newCourse = await resCourse.json();
-      console.log("Curso creado exitosamente:", newCourse);
-
+      await resCourse.json();
       router.push("/dashboard/administrator/admin/courses/manage");
-
     } catch (err) {
       console.error("Error detallado:", err);
       alert(err instanceof Error ? err.message : "Error en el proceso de creación.");
@@ -137,8 +135,12 @@ export default function NewCoursePage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background font-sans">
-      <Sidebar role="ADMIN" />
+    <motion.div
+      className="flex min-h-screen bg-background font-sans"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+    >
       <main className="flex-1 overflow-auto flex flex-col">
         <PageHeader
           title="Nuevo Curso"
@@ -148,13 +150,17 @@ export default function NewCoursePage() {
         />
 
         <div className="p-6 lg:p-10 max-w-3xl mx-auto w-full">
-          <form onSubmit={handleSubmit} className="bg-card p-8 lg:p-10 rounded-[2.5rem] border border-border shadow-sm space-y-8">
-
-            {/* Imagen de portada */}
+          <motion.form
+            onSubmit={handleSubmit}
+            variants={sectionVariants}
+            initial="hidden"
+            animate="show"
+            className="bg-card p-8 lg:p-10 rounded-[2.5rem] border border-border shadow-sm space-y-8"
+          >
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+              <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1 block">
                 Imagen de portada
-              </label>
+              </span>
               <label className="relative h-40 w-full border-2 border-dashed rounded-2xl flex items-center justify-center transition-all cursor-pointer group overflow-hidden bg-muted/20 hover:border-primary">
                 <input
                   type="file"
@@ -163,32 +169,46 @@ export default function NewCoursePage() {
                   className="hidden"
                   disabled={loading}
                 />
-                {imagePreview ? (
-                  <>
-                    <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <div className="text-center text-white">
-                        <i className="bi bi-camera text-2xl mb-1 block"></i>
-                        <span className="text-[10px] font-bold">Cambiar imagen</span>
+                <AnimatePresence mode="wait">
+                  {imagePreview ? (
+                    <motion.div
+                      key="preview"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      className="w-full h-full"
+                    >
+                      <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <div className="text-center text-white">
+                          <i className="bi bi-camera text-2xl mb-1 block"></i>
+                          <span className="text-[10px] font-bold">Cambiar imagen</span>
+                        </div>
                       </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center">
-                    <i className="bi bi-image text-3xl text-muted-foreground mb-2 block"></i>
-                    <p className="font-bold text-foreground text-sm">Seleccionar imagen</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG, GIF hasta 5MB</p>
-                  </div>
-                )}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="placeholder"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      className="text-center"
+                    >
+                      <i className="bi bi-image text-3xl text-muted-foreground mb-2 block"></i>
+                      <p className="font-bold text-foreground text-sm">Seleccionar imagen</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG, GIF hasta 5MB</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </label>
             </div>
 
-            {/* Título */}
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+              <label htmlFor="course-title" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1 block">
                 Nombre del curso
               </label>
               <input
+                id="course-title"
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -199,10 +219,11 @@ export default function NewCoursePage() {
               />
             </div>
 
-            {/* Categoría */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button
+              <motion.button
                 type="button"
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   setFormData({ ...formData, category: 'BASICO', requiredRole: '' });
                 }}
@@ -211,58 +232,75 @@ export default function NewCoursePage() {
               >
                 <i className="bi bi-book text-xl"></i>
                 Onboarding
-              </button>
-              <button
+              </motion.button>
+
+              <motion.button
                 type="button"
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setFormData({ ...formData, category: 'ESPECIALIZADO' })}
                 className={`p-4 rounded-2xl border-2 font-bold transition-all flex items-center justify-center gap-2 ${formData.category === 'ESPECIALIZADO' ? 'border-primary bg-primary/5 text-primary' : 'border-transparent bg-muted/50 text-muted-foreground'}`}
                 disabled={loading}
               >
                 <i className="bi bi-mortarboard text-xl"></i>
                 Especialización
-              </button>
+              </motion.button>
             </div>
 
-            {/* Campo de Rol Requerido - Solo para especialización */}
-            {formData.category === "ESPECIALIZADO" && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                  Rol Requerido
-                </label>
-                <select
-                  value={formData.requiredRole}
-                  onChange={(e) => setFormData({ ...formData, requiredRole: e.target.value })}
-                  className="w-full px-6 py-4 rounded-2xl bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary outline-none font-bold transition-all appearance-none cursor-pointer"
-                  disabled={loading || loadingRoles}
-                  required={formData.category === "ESPECIALIZADO"}
+            <AnimatePresence mode="wait">
+              {formData.category === "ESPECIALIZADO" ? (
+                <motion.div
+                  key="role"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="space-y-2"
                 >
-                  <option value="">Seleccionar rol...</option>
-                  {availableRoles.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-muted-foreground ml-1">
-                  Solo los empleados con este rol podrán ver y acceder al curso
-                </p>
-              </div>
-            )}
+                  <label htmlFor="required-role" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1 block">
+                    Rol Requerido
+                  </label>
+                  <select
+                    id="required-role"
+                    value={formData.requiredRole}
+                    onChange={(e) => setFormData({ ...formData, requiredRole: e.target.value })}
+                    className="w-full px-6 py-4 rounded-2xl bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary outline-none font-bold transition-all appearance-none cursor-pointer"
+                    disabled={loading || loadingRoles}
+                    required={formData.category === "ESPECIALIZADO"}
+                  >
+                    <option value="">Seleccionar rol...</option>
+                    {availableRoles.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-muted-foreground ml-1">
+                    Solo los empleados con este rol podrán ver y acceder al curso
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="info"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="p-4 bg-primary/5 border border-primary/20 rounded-2xl"
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-primary text-center flex items-center justify-center gap-2">
+                    <i className="bi bi-info-circle"></i>
+                    Los cursos de Onboarding están disponibles para todos los empleados sin restricción de rol
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* Mensaje informativo para cursos de onboarding */}
-            {formData.category === "BASICO" && (
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-primary text-center flex items-center justify-center gap-2">
-                  <i className="bi bi-info-circle"></i>
-                  Los cursos de Onboarding están disponibles para todos los empleados sin restricción de rol
-                </p>
-              </div>
-            )}
-
-            {/* Botón submit */}
-            <button
+            <motion.button
               type="submit"
               disabled={loading}
+              whileHover={!loading ? { y: -2 } : undefined}
+              whileTap={!loading ? { scale: 0.99 } : undefined}
               className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-bold text-lg hover:opacity-90 disabled:opacity-50 shadow-lg transition-all flex items-center justify-center gap-2"
             >
               {loading ? (
@@ -276,10 +314,10 @@ export default function NewCoursePage() {
                   Crear Curso
                 </>
               )}
-            </button>
-          </form>
+            </motion.button>
+          </motion.form>
         </div>
       </main>
-    </div>
+    </motion.div>
   );
 }

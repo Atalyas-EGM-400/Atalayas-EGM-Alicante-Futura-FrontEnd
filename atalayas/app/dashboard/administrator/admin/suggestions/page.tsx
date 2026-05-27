@@ -142,7 +142,6 @@ export default function AdminSuggestionsPage() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground">
-      <Sidebar role="ADMIN" />
       
       {/* Scroll natural sin barras visibles */}
       <main className="flex-1 flex flex-col relative overflow-y-auto no-scrollbar">
@@ -185,7 +184,7 @@ export default function AdminSuggestionsPage() {
           {view === 'RECEIVED' && (
             <>
               {/* Lista lateral de correos */}
-              <div className={`w-full lg:w-[400px] xl:w-[450px] lg:border-r border-border/40 flex flex-col bg-background/50 ${selected ? 'hidden lg:flex' : 'flex'}`}>
+              <div className={`w-full lg:w-100 xl:w-112.5 lg:border-r border-border/40 flex flex-col bg-background/50 ${selected ? 'hidden lg:flex' : 'flex'}`}>
                 
                 {/* Cabecera de filtros */}
                 <div className="p-4 border-b border-border/40 shrink-0 bg-card/30 overflow-x-auto no-scrollbar">
@@ -240,7 +239,7 @@ export default function AdminSuggestionsPage() {
                         <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground">
                           <div className="flex items-center gap-1.5">
                             <i className="bi bi-person-circle"></i>
-                            <span className="truncate max-w-[120px]">{s.User?.name || 'Usuario Anónimo'}</span>
+                            <span className="truncate max-w-30">{s.User?.name || 'Usuario Anónimo'}</span>
                           </div>
                           <span>{new Date(s.createdAt).toLocaleDateString()}</span>
                         </div>
@@ -303,7 +302,7 @@ export default function AdminSuggestionsPage() {
                               value={responseBody} 
                               onChange={e => setResponseBody(e.target.value)} 
                               placeholder="Escribe tu respuesta oficial aquí. El empleado recibirá una notificación..." 
-                              className="w-full p-4 bg-background border border-border/60 rounded-xl text-sm min-h-[120px] focus:ring-2 focus:ring-primary/20 outline-none transition-all text-foreground resize-none" 
+                              className="w-full p-4 bg-background border border-border/60 rounded-xl text-sm min-h-30 focus:ring-2 focus:ring-primary/20 outline-none transition-all text-foreground resize-none" 
                             />
                             <div className="flex flex-col sm:flex-row gap-3 mt-4">
                               <button 
@@ -348,7 +347,7 @@ export default function AdminSuggestionsPage() {
           {/* ─── VISTA ENVIADOS ─── */}
           {view === 'SENT' && (
              <>
-             <div className="w-full lg:w-[450px] lg:border-r border-border/40 flex flex-col bg-background/50 p-6 lg:p-8">
+             <div className="w-full lg:w-112.5 lg:border-r border-border/40 flex flex-col bg-background/50 p-6 lg:p-8">
                <h3 className="font-bold text-xl mb-2 text-foreground">
                  Escribir Propuesta
                </h3>
@@ -371,7 +370,7 @@ export default function AdminSuggestionsPage() {
                     placeholder="Explica tu idea detalladamente..." 
                     value={newContent} 
                     onChange={e => setNewContent(e.target.value)} 
-                    className="w-full p-4 bg-card border border-border/60 rounded-2xl text-sm min-h-[200px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground transition-all shadow-sm resize-none" 
+                    className="w-full p-4 bg-card border border-border/60 rounded-2xl text-sm min-h-50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground transition-all shadow-sm resize-none" 
                     required 
                    />
                  </div>

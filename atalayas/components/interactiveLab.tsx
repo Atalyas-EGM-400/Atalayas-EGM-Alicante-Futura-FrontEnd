@@ -83,10 +83,17 @@ interface LabData {
   dropZones?: DropZone[];
   validation?: Record<string, string>;
 }
+interface InteractiveLabProps {
+  data: LabData;
+  onCompleted?: () => void;
+}
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 
-export default function InteractiveLab({ data }: { data: LabData }) {
+export default function InteractiveLab({
+  data,
+  onCompleted,
+}: InteractiveLabProps) {
   const [items, setItems]       = useState<DragItem[]>([]);
   const [placed, setPlaced]     = useState<Record<string, string>>({});
   const [errorId, setErrorId]   = useState<string | null>(null);
@@ -106,9 +113,17 @@ export default function InteractiveLab({ data }: { data: LabData }) {
   const allDone = total > 0 && done === total;
   const pct     = total > 0 ? Math.round((done / total) * 100) : 0;
 
-  useEffect(() => {
-    if (allDone) setTimeout(() => setShowSuccess(true), 400);
-  }, [allDone]);
+useEffect(() => {
+  if (allDone) {
+    setTimeout(() => {
+      setShowSuccess(true);
+
+      // avisar al componente padre
+      onCompleted?.();
+    }, 400);
+  }
+}, [allDone, onCompleted]);
+
 
   const onDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.setData('draggableId', id);

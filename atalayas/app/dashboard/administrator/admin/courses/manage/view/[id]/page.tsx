@@ -6,6 +6,7 @@ import Link from "next/link";
 import Sidebar from "@/components/ui/Sidebar";
 import PageHeader from "@/components/ui/pageHeader";
 import { API_ROUTES } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function AdminCourseDetailPage() {
   const { id } = useParams();
@@ -34,7 +35,6 @@ export default function AdminCourseDetailPage() {
     if (id) fetchCourse();
   }, [id]);
 
-  // --- Lógica de Restricción ---
   const isPublicCourse = course?.isPublic === true || course?.isPublic === "true";
 
   const executeDelete = async () => {
@@ -70,9 +70,7 @@ export default function AdminCourseDetailPage() {
   );
 
   return (
-    <div className="flex min-h-screen bg-background font-sans text-foreground">
-      <Sidebar role="ADMIN" />
-
+    <div className="flex h-screen bg-[#f5f5f7] dark:bg-[#0d0d0f] overflow-hidden font-sans text-foreground">
       <main className="flex-1 overflow-auto flex flex-col relative">
         <PageHeader
           title={course?.title || "Detalle del Curso"}
@@ -80,7 +78,6 @@ export default function AdminCourseDetailPage() {
           icon={<i className="bi bi-journal-bookmark"></i>}
           backUrl="/dashboard/administrator/admin/courses/manage"
           action={
-            /* Ocultamos el botón de añadir si es público */
             !isPublicCourse ? (
               <Link
                 href={`/dashboard/administrator/admin/courses/manage/view/${id}/content/new`}
@@ -97,10 +94,13 @@ export default function AdminCourseDetailPage() {
         />
 
         <div className="p-6 lg:p-10 flex-1 max-w-6xl mx-auto w-full">
-
-          <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col">
-
-            <div className="p-5 border-b border-border flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/20">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="bg-white dark:bg-[#1c1c1e] rounded-3xl border border-gray-100 dark:border-white/5 overflow-hidden shadow-sm flex flex-col"
+          >
+            <div className="p-5 border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/60 dark:bg-white/5">
               <h2 className="text-sm font-bold uppercase tracking-widest text-foreground ml-2">Unidades</h2>
 
               <div className="relative w-full sm:max-w-xs">
@@ -122,7 +122,6 @@ export default function AdminCourseDetailPage() {
                     <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest w-20 text-center">Nº</th>
                     <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Título</th>
                     <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Tipo</th>
-                    {/* Solo mostramos la columna de acciones si NO es público */}
                     {!isPublicCourse && (
                       <th className="px-6 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right">Acciones</th>
                     )}
@@ -130,9 +129,12 @@ export default function AdminCourseDetailPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredContents.length > 0 ? (
-                    filteredContents.map((content: any) => (
-                      <tr
+                    filteredContents.map((content: any, index: number) => (
+                      <motion.tr
                         key={content.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, delay: index * 0.03 }}
                         onClick={() => router.push(`/dashboard/administrator/admin/courses/manage/view/${id}/content/${content.id}`)}
                         className="hover:bg-muted/40 transition-all group cursor-pointer"
                       >
@@ -162,7 +164,6 @@ export default function AdminCourseDetailPage() {
                           </div>
                         </td>
 
-                        {/* ACCIONES CONDICIONALES */}
                         {!isPublicCourse ? (
                           <td className="px-6 py-5 text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1">
@@ -186,14 +187,13 @@ export default function AdminCourseDetailPage() {
                             </div>
                           </td>
                         ) : (
-                          /* Si es público, mostramos solo la flecha indicadora de entrada */
                           <td className="px-6 py-5 text-right">
                             <div className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all">
                               <i className="bi bi-chevron-right text-sm"></i>
                             </div>
                           </td>
                         )}
-                      </tr>
+                      </motion.tr>
                     ))
                   ) : (
                     <tr>
@@ -205,14 +205,21 @@ export default function AdminCourseDetailPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </motion.div>
         </div>
       </main>
 
-      {/* Modal de eliminación (Protegido con check isPublicCourse) */}
       {showDeleteModal && !isPublicCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-border text-center animate-in zoom-in-95">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ scale: 0.96, y: 10 }}
+            animate={{ scale: 1, y: 0 }}
+            className="bg-card w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-border text-center"
+          >
             <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
               <i className="bi bi-exclamation-triangle"></i>
             </div>
@@ -222,8 +229,8 @@ export default function AdminCourseDetailPage() {
               <button onClick={executeDelete} className="w-full py-3 bg-destructive text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-destructive/20">Sí, eliminar</button>
               <button onClick={() => setShowDeleteModal(false)} className="w-full py-3 bg-muted text-foreground rounded-xl font-bold text-sm hover:bg-border transition-all">Cancelar</button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </div>
   );

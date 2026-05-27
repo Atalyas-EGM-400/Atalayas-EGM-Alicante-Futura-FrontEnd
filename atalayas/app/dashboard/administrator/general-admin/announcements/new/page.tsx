@@ -11,6 +11,7 @@ export default function NewGlobalAnnouncementPage() {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   
   // Estado para validaciones
   const [errors, setErrors] = useState<{ title?: string; content?: string }>({});
@@ -18,7 +19,9 @@ export default function NewGlobalAnnouncementPage() {
   const [formData, setFormData] = useState({ 
     title: "", 
     content: "", 
-    imageFile: null as File | null 
+    imageFile: null as File | null ,
+    sendEmail: false,
+
   });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,12 +55,13 @@ export default function NewGlobalAnnouncementPage() {
       data.append("title", formData.title);
       data.append("content", formData.content);
       
-      // Forzamos isPublic a true ya que es el Administrador General
       data.append("isPublic", "true");
       
       if (formData.imageFile) {
         data.append("image", formData.imageFile);
       }
+      data.append("sendEmail", formData.sendEmail ? "1" : "0");
+
 
       const res = await fetch(API_ROUTES.ANNOUNCEMENTS.CREATE, {
         method: "POST",
@@ -81,14 +85,12 @@ export default function NewGlobalAnnouncementPage() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans">
-      {/* Sidebar configurado para GENERAL_ADMIN */}
-      <Sidebar role="GENERAL_ADMIN" />
       
       <main className="flex-1 overflow-auto flex flex-col">
         <PageHeader 
-          title="Nuevo Comunicado Global"
+          title="Nuevo Comunicado Público"
           description="Crea un anuncio de alto impacto visible para todas las organizaciones."
-          icon={<i className="bi bi-globe-americas"></i>}
+          icon={<i className="bi bi-megaphone-fill"></i>}
           backUrl={`/dashboard/administrator/general-admin/announcements`}
         />
 
@@ -174,6 +176,24 @@ export default function NewGlobalAnnouncementPage() {
                   </div>
                 )}
               </label>
+
+              <div className="md:col-span-2 p-6 rounded-3xl bg-primary/5 border border-primary/20 flex items-center gap-4 group transition-all hover:bg-primary/10">
+  <div className="relative flex items-center cursor-pointer">
+    <input 
+      type="checkbox" 
+      id="sendEmail"
+      checked={formData.sendEmail}
+      onChange={(e) => setFormData({...formData, sendEmail: e.target.checked})}
+      className="peer h-6 w-6 cursor-pointer appearance-none rounded-md border border-primary/50 transition-all checked:border-primary checked:bg-primary"
+    />
+    <i className="bi bi-check text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 pointer-events-none"></i>
+  </div>
+  
+  <label htmlFor="sendEmail" className="cursor-pointer select-none">
+    <p className="text-sm font-black text-primary uppercase tracking-tighter">Notificar por email</p>
+    <p className="text-[10px] text-primary/60 font-medium">Se enviará un correo de aviso sobre el anuncio a todos los usuarios.</p>
+  </label>
+</div>
             </div>
 
             <button 

@@ -191,7 +191,7 @@ export default function BulkCreatePage() {
         }
 
         if (!hasCriticalError) {
-            setTimeout(() => router.push("/dashboard/administrator/employees"), 1500);
+            setTimeout(() => router.push("/dashboard/administrator/general-admin/employees"), 1500);
         } else {
             setError(`Se detectaron errores en ${errorCount} registro(s).`);
             setLoading(false);
@@ -202,17 +202,16 @@ export default function BulkCreatePage() {
 
     return (
         <div className="flex min-h-screen bg-background font-sans text-foreground">
-            <Sidebar role={currentUser.role} />
 
             <main className="flex-1 overflow-auto flex flex-col relative">
                 <PageHeader
                     title="Carga Masiva"
                     description="Sube archivos CSV para registrar múltiples empleados simultáneamente."
                     icon={<i className="bi bi-file-earmark-spreadsheet-fill"></i>}
-                    backUrl="/dashboard/administrator/employees"
+                    backUrl="/dashboard/administrator/general-admin/employees"
                 />
 
-                <div className="p-6 lg:p-10 w-full max-w-[1400px] mx-auto transition-all animate-in fade-in duration-500">
+                <div className="p-6 lg:p-10 w-full max-w-350 mx-auto transition-all animate-in fade-in duration-500">
 
                     {employees.length === 0 ? (
                         <div className="bg-card rounded-[2rem] border-2 border-dashed border-border p-16 text-center flex flex-col items-center justify-center shadow-sm">
@@ -321,7 +320,7 @@ export default function BulkCreatePage() {
                                                             ) : emp.status === "error" ? (
                                                                 <div className="flex flex-col">
                                                                     <span className="text-destructive text-[9px] font-black uppercase italic">Error</span>
-                                                                    <span className="text-destructive/80 text-[10px] font-medium leading-none truncate max-w-[120px]">{emp.errorMsg}</span>
+                                                                    <span className="text-destructive/80 text-[10px] font-medium leading-none truncate max-w-30">{emp.errorMsg}</span>
                                                                 </div>
                                                             ) : (
                                                                 <span className="text-muted-foreground/40 text-[10px] font-black uppercase italic tracking-tighter">Pendiente</span>

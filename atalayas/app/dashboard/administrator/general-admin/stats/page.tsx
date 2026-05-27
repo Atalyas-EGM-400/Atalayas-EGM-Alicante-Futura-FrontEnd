@@ -8,6 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSocket } from '@/app/providers/SocketProvider';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
+interface TrendEntry {
+  createdAt: string;
+}
+
 interface StatsData {
   overview: {
     totalCompanies: number;
@@ -23,6 +27,8 @@ interface StatsData {
     totalDocuments: number;
     totalServices: number;
     pendingRequests: number;
+    inactiveUsers?: number; // Para el contador de bajas
+    inactiveCompanies?: number; // Para el contador de bajas
   };
   recent: {
     users: Array<{ id: string; name: string; email: string; role: string; createdAt: string; avatarUrl?: string; Company?: { name: string } }>;
@@ -34,6 +40,10 @@ interface StatsData {
   trends: {
     usersByMonth: Array<{ createdAt: string }>;
     companiesByMonth: Array<{ createdAt: string }>;
+  };
+  workforce?: {
+    userDepartures: TrendEntry[];
+    companyDepartures: TrendEntry[];
   };
 }
 
@@ -94,14 +104,60 @@ function processYearlyData(items: Array<{ createdAt: string }>, targetYear: numb
   return getMonthsLabels().map((label, i) => ({ label, value: counts[i] }));
 }
 
+// ── Skeleton ──────────────────────────────────────────────────────────────
+function StatsSkeleton() {
+  return (
+    <div className="p-6 lg:p-8 space-y-4 max-w-7xl mx-auto w-full animate-pulse">
+      <div className="bg-card border border-border/50 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-muted shrink-0" />
+          <div className="space-y-2">
+            <div className="h-2.5 bg-muted rounded w-20" />
+            <div className="h-8 bg-muted rounded w-32" />
+          </div>
+        </div>
+        <div className="flex items-center gap-6 sm:border-l sm:border-border/50 sm:pl-6">
+          <div className="space-y-1.5"><div className="h-2 bg-muted rounded w-16" /><div className="h-3.5 bg-muted rounded w-20" /></div>
+          <div className="space-y-1.5"><div className="h-2 bg-muted rounded w-16" /><div className="h-3.5 bg-muted rounded w-12" /></div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="bg-card border border-border/50 rounded-2xl p-5 flex flex-col gap-3">
+            <div className="w-9 h-9 rounded-xl bg-muted" />
+            <div className="space-y-1.5"><div className="h-7 bg-muted rounded w-16" /><div className="h-2.5 bg-muted rounded w-20" /></div>
+          </div>
+        ))}
+      </div>
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="bg-card border border-border/50 rounded-2xl">
+          <div className="p-5 flex items-center justify-between">
+            <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-xl bg-muted" /><div className="h-4 bg-muted rounded w-40" /></div>
+            <div className="w-4 h-4 bg-muted rounded" />
+          </div>
+          {i < 2 && (
+            <div className="px-5 pb-5 border-t border-border/40 pt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div className="space-y-3"><div className="h-4 bg-muted rounded w-48" /><div className="h-3 bg-muted rounded w-64" /><div className="h-16 bg-muted rounded-xl mt-4" /></div>
+                <div className="space-y-3"><div className="h-2.5 bg-muted rounded w-32" /><div className="h-3 bg-muted rounded w-28" /><div className="h-3 bg-muted rounded w-28" /></div>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Componentes Pequeños ──────────────────────────────────────────────────
 
 function KpiCard({ label, value, icon, color, sub }: { label: string; value: number | string; icon: string; color: string; sub?: string; }) {
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-card border border-border/50 rounded-2xl p-5 flex flex-col gap-3 hover:border-border transition-all"
+      className="bg-card border border-border/50 rounded-2xl p-5 flex flex-col gap-3 hover:border-border hover:shadow-lg transition-all"
     >
       <div className="flex items-center justify-between">
         <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-base ${color}`}>
@@ -117,13 +173,14 @@ function KpiCard({ label, value, icon, color, sub }: { label: string; value: num
   );
 }
 
-function MiniLineChart({ data, theme }: { data: { label: string; value: number }[]; theme: 'blue' | 'violet' }) {
+function MiniLineChart({ data, theme }: { data: { label: string; value: number }[]; theme: 'blue' | 'violet' | 'rose' }) {
   const max = Math.max(...data.map(d => d.value), 1);
   const total = data.reduce((sum, d) => sum + d.value, 0) || 1; 
 
   const colors = {
     blue: { stroke: '#3b82f6', fill: 'rgba(59, 130, 246, 0.15)' },
-    violet: { stroke: '#8b5cf6', fill: 'rgba(139, 92, 246, 0.15)' }
+    violet: { stroke: '#8b5cf6', fill: 'rgba(139, 92, 246, 0.15)' },
+    rose: { stroke: '#f43f5e', fill: 'rgba(244, 63, 94, 0.15)' }
   };
 
   const points = data.map((d, i) => {
@@ -208,10 +265,16 @@ function DonutChart({ segments, centerValue, label }: { segments: Array<{ label:
   );
 }
 
-function Section({ title, icon, iconColor, defaultOpen = true, children }: { title: string; icon: string; iconColor: string; defaultOpen?: boolean; children: React.ReactNode; }) {
+function Section({ title, icon, iconColor, defaultOpen = true, children, delay = 0 }: { title: string; icon: string; iconColor: string; defaultOpen?: boolean; children: React.ReactNode; delay?: number }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="bg-card border border-border/50 rounded-2xl">
+    <motion.div 
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut', delay }}
+      className="bg-card border border-border/50 rounded-2xl overflow-hidden"
+    >
       <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between p-5 hover:bg-muted/30 transition-colors group">
         <div className="flex items-center gap-3">
           <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm ${iconColor}`}>
@@ -236,14 +299,14 @@ function Section({ title, icon, iconColor, defaultOpen = true, children }: { tit
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
 // ── Modales Históricos ────────────────────────────────────────────────────
 
 // 1. Modal simple animado (Usuarios/Mes y Empresas/Mes)
-function YearlyHistorySelector({ data, title, theme }: { data: Array<{ createdAt: string }>, title: string, theme: 'blue' | 'violet' }) {
+function YearlyHistorySelector({ data, title, theme }: { data: Array<{ createdAt: string }>, title: string, theme: 'blue' | 'violet' | 'rose' }) {
   const [isOpen, setIsOpen] = useState(false);
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -254,7 +317,8 @@ function YearlyHistorySelector({ data, title, theme }: { data: Array<{ createdAt
 
   const themeColors = {
     blue: { stroke: '#3b82f6', bg: 'bg-blue-500' },
-    violet: { stroke: '#8b5cf6', bg: 'bg-violet-500' }
+    violet: { stroke: '#8b5cf6', bg: 'bg-violet-500' },
+    rose: { stroke: '#f43f5e', bg: 'bg-rose-500' }
   };
   const c = themeColors[theme];
 
@@ -553,7 +617,6 @@ function CombinedYearlyHistorySelector({ users, companies, title }: { users: any
                            </div>
                         </div>
 
-                        {/* Flex-col-reverse renderiza el primer elemento abajo. Así que Empresas va primero. */}
                         <motion.div 
                           className="w-full max-w-[60px] flex flex-col-reverse rounded-t-[4px] overflow-hidden bg-muted/10 relative z-0"
                           initial={{ height: 0 }}
@@ -675,300 +738,376 @@ export default function RealTimeStatsPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const { onlineUsers } = useSocket();
+  const { onlineUsers, companyOnlineUsers } = useSocket();
 
   useEffect(() => {
     const saved = localStorage.getItem('user');
     if (saved) setCurrentUser(JSON.parse(saved));
     const token = localStorage.getItem('token');
 
-    fetchWithApiFallback(API_ROUTES.STATS.GET_ADMIN, {
+    fetchWithApiFallback(API_ROUTES.STATS.GET_GENERAL, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(setStats)
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return (
-    <div className="flex h-screen bg-background items-center justify-center">
-      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
   const ov = stats?.overview;
   const role = currentUser?.role ?? 'GENERAL_ADMIN';
-  const userTrend = groupByMonth(stats?.trends.usersByMonth ?? []);
-  const companyTrend = groupByMonth(stats?.trends.companiesByMonth ?? []);
-  const maxEnrollments = Math.max(...(stats?.top.courses.map(c => c._count.Enrollment) ?? [1]), 1);
+  
+  const displayOnlineUsers = currentUser?.role === 'GENERAL_ADMIN' ? onlineUsers : companyOnlineUsers;
+  
+  const userTrend = groupByMonth(stats?.trends?.usersByMonth ?? []);
+  const companyTrend = groupByMonth(stats?.trends?.companiesByMonth ?? []);
+  
+  const userDeparturesData = stats?.workforce?.userDepartures ?? [];
+  const companyDeparturesData = stats?.workforce?.companyDepartures ?? [];
+  const userDepartureTrend = groupByMonth(userDeparturesData);
+  const companyDepartureTrend = groupByMonth(companyDeparturesData);
+  
+  // SOLUCIÓN AL CONTADOR DE BAJAS: Lee de inactiveUsers o de la longitud del array si está vacío
+  const totalUserDepartures = ov?.inactiveUsers ?? userDeparturesData.length;
+  const totalCompanyDepartures = ov?.inactiveCompanies ?? companyDeparturesData.length;
+
+  const maxEnrollments = Math.max(...(stats?.top?.courses?.map(c => c._count.Enrollment) ?? [1]), 1);
 
   return (
     <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden">
-      <Sidebar role={role} />
 
-      <main className="flex-1 overflow-y-auto no-scrollbar flex flex-col">
+      <main className="flex-1 overflow-y-auto no-scrollbar flex flex-col relative">
         <PageHeader
           title="Panel de Control"
           description="Monitoreo de infraestructura y métricas de rendimiento en vivo."
           icon={<i className="bi bi-broadcast"></i>}
         />
 
-        <div className="p-6 lg:p-8 space-y-4 max-w-7xl mx-auto w-full">
-
-          {/* ── LIVE ACTIVITY BAR ─────────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card border border-border/50 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-          >
-            <div className="flex items-center gap-4">
-              <div className="relative w-10 h-10 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30"></span>
-                <span className="relative w-10 h-10 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-                  <i className="bi bi-broadcast text-emerald-500 text-base"></i>
-                </span>
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              layout
+              key="skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative flex-1 w-full"
+            >
+              <div className="absolute top-0 left-0 right-0 z-50 flex justify-center pt-32">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary shadow-lg bg-card/60 backdrop-blur-sm p-1"></div>
               </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-500 mb-0.5">Live Activity</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-semibold tabular-nums tracking-tighter">{onlineUsers}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {onlineUsers === 1 ? 'usuario conectado' : 'usuarios conectados'} ahora mismo
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-6 text-[11px] sm:border-l sm:border-border/50 sm:pl-6">
-              <div>
-                <p className="text-muted-foreground uppercase tracking-widest font-medium mb-0.5">Sistema</p>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  <span className="font-medium uppercase tracking-tight">Operativo</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-muted-foreground uppercase tracking-widest font-medium mb-0.5">Solicitudes</p>
-                <span className={`tabular-nums ${(ov?.pendingRequests ?? 0) > 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
-                  {ov?.pendingRequests ?? 0} pendientes
-                </span>
-              </div>
-              <div>
-                <p className="text-muted-foreground uppercase tracking-widest font-medium mb-0.5">Progreso medio</p>
-                <span className="tabular-nums">{ov?.avgProgress ?? 0}%</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ── KPI GRID ──────────────────────────────────────── */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <KpiCard label="Empresas" value={ov?.totalCompanies ?? 0} icon="bi-buildings-fill" color="bg-violet-500/10 text-violet-400" />
-            <KpiCard label="Usuarios" value={ov?.totalUsers ?? 0} icon="bi-people-fill" color="bg-blue-500/10 text-blue-400" />
-            <KpiCard label="Cursos" value={ov?.totalCourses ?? 0} icon="bi-journal-bookmark-fill" color="bg-amber-500/10 text-amber-400" />
-            <KpiCard label="Matrículas" value={ov?.totalEnrollments ?? 0} icon="bi-mortarboard-fill" color="bg-orange-500/10 text-orange-400" />
-            <KpiCard label="Documentos" value={ov?.totalDocuments ?? 0} icon="bi-folder-fill" color="bg-cyan-500/10 text-cyan-400" />
-            <KpiCard label="Servicios" value={ov?.totalServices ?? 0} icon="bi-briefcase-fill" color="bg-pink-500/10 text-pink-400" />
-          </div>
-
-          {/* ── SECCIÓN: USUARIOS & EMPRESAS ──────────────────── */}
-          <Section title="Usuarios y Empresas" icon="bi-people-fill" iconColor="bg-blue-500/10 text-blue-400">
-            <div className="space-y-8">
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center border-b border-border/40 pb-6">
-                <div className="lg:col-span-1">
-                  <h4 className="text-sm font-medium tracking-tight mb-1">Crecimiento de red</h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                    Balance entre altas de empresas y registros de nuevos usuarios.
-                  </p>
-                  <CombinedYearlyHistorySelector 
-                    users={stats?.trends.usersByMonth || []} 
-                    companies={stats?.trends.companiesByMonth || []} 
-                    title="Crecimiento global de Atalayas"
-                  />
-                </div>
-                <div className="lg:col-span-2 bg-muted/20 p-5 rounded-2xl border border-border/40">
-                  <AdditionsChart users={stats?.trends.usersByMonth || []} companies={stats?.trends.companiesByMonth || []} />
-                </div>
+              <div className="opacity-30 pointer-events-none transition-opacity duration-300">
+                <StatsSkeleton />
               </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              layout
+              key="content"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="p-6 lg:p-8 space-y-4 max-w-7xl mx-auto w-full"
+            >
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                <div className="flex flex-col gap-3">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Composición de red</p>
-                  <DonutChart
-                    centerValue={ov?.totalUsers ?? 0}
-                    label="Usuarios"
-                    segments={[
-                      { label: 'Empleados', value: ov?.totalEmployees ?? 0, color: '#10b981' },
-                      { label: 'Admins', value: ov?.totalAdmins ?? 0, color: '#3b82f6' },
-                      { label: 'Invitados', value: Math.max(0, (ov?.totalUsers ?? 0) - (ov?.totalEmployees ?? 0) - (ov?.totalAdmins ?? 0)), color: '#a855f7' },
-                    ]}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Usuarios / mes</p>
-                    <YearlyHistorySelector data={stats?.trends.usersByMonth || []} title="Altas de Usuarios" theme="blue" />
+              {/* ── LIVE ACTIVITY BAR ─────────────────────────────── */}
+              <motion.div
+                layout
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card border border-border/50 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="relative w-10 h-10 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30"></span>
+                    <span className="relative w-10 h-10 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                      <i className="bi bi-broadcast text-emerald-500 text-base"></i>
+                    </span>
                   </div>
-                  <MiniLineChart data={userTrend} theme="blue" />
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Empresas / mes</p>
-                    <YearlyHistorySelector data={stats?.trends.companiesByMonth || []} title="Altas de Empresas" theme="violet" />
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-500 mb-0.5">Live Activity</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-semibold tabular-nums tracking-tighter">{displayOnlineUsers}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {displayOnlineUsers === 1 ? 'usuario conectado' : 'usuarios conectados'} ahora mismo
+                      </span>
+                    </div>
                   </div>
-                  <MiniLineChart data={companyTrend} theme="violet" />
                 </div>
-              </div>
-            </div>
-          </Section>
-
-          {/* ── SECCIÓN: FORMACIÓN ────────────────────────────── */}
-          <Section title="Formación y Cursos" icon="bi-mortarboard-fill" iconColor="bg-amber-500/10 text-amber-400">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <div className="flex flex-col gap-3">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Estado de matrículas</p>
-                <DonutChart
-                  centerValue={ov?.totalEnrollments ?? 0}
-                  label="Matrículas"
-                  segments={[
-                    { label: 'Completados', value: ov?.completedEnrollments ?? 0, color: '#f59e0b' },
-                    { label: 'En proceso', value: (ov?.totalEnrollments ?? 0) - (ov?.completedEnrollments ?? 0), color: '#334155' },
-                  ]}
-                />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">KPIs de formación</p>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Tasa de finalización', value: `${ov?.completionRate ?? 0}%`, bar: ov?.completionRate ?? 0, color: 'bg-amber-500' },
-                    { label: 'Progreso medio', value: `${ov?.avgProgress ?? 0}%`, bar: ov?.avgProgress ?? 0, color: 'bg-orange-500' },
-                    { label: 'Cursos públicos', value: `${ov?.publicCourses ?? 0} / ${ov?.totalCourses ?? 0}`, bar: ov?.totalCourses ? Math.round(((ov?.publicCourses ?? 0) / ov.totalCourses) * 100) : 0, color: 'bg-yellow-500' },
-                  ].map((item, i) => (
-                    <div key={i}>
-                      <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-muted-foreground">{item.label}</span>
-                        <span className="tabular-nums">{item.value}</span>
-                      </div>
-                      <div className="h-1 bg-muted rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${item.bar}%` }}
-                          transition={{ delay: 0.1 * i, duration: 0.6, ease: 'easeOut' }}
-                          className={`h-full rounded-full ${item.color}`}
-                        />
-                      </div>
+                <div className="flex items-center gap-6 text-[11px] sm:border-l sm:border-border/50 sm:pl-6">
+                  <div>
+                    <p className="text-muted-foreground uppercase tracking-widest font-medium mb-0.5">Sistema</p>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <span className="font-medium uppercase tracking-tight">Operativo</span>
                     </div>
-                  ))}
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground uppercase tracking-widest font-medium mb-0.5">Solicitudes</p>
+                    <span className={`tabular-nums ${(ov?.pendingRequests ?? 0) > 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                      {ov?.pendingRequests ?? 0} pendientes
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground uppercase tracking-widest font-medium mb-0.5">Progreso medio</p>
+                    <span className="tabular-nums">{ov?.avgProgress ?? 0}%</span>
+                  </div>
                 </div>
+              </motion.div>
+
+              {/* ── KPI GRID ──────────────────────────────────────── */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <KpiCard label="Empresas" value={ov?.totalCompanies ?? 0} icon="bi-buildings-fill" color="bg-violet-500/10 text-violet-400" />
+                <KpiCard label="Usuarios" value={ov?.totalUsers ?? 0} icon="bi-people-fill" color="bg-blue-500/10 text-blue-400" />
+                <KpiCard label="Cursos" value={ov?.totalCourses ?? 0} icon="bi-journal-bookmark-fill" color="bg-amber-500/10 text-amber-400" />
+                <KpiCard label="Matrículas" value={ov?.totalEnrollments ?? 0} icon="bi-mortarboard-fill" color="bg-orange-500/10 text-orange-400" />
+                <KpiCard label="Documentos" value={ov?.totalDocuments ?? 0} icon="bi-folder-fill" color="bg-cyan-500/10 text-cyan-400" />
+                <KpiCard label="Servicios" value={ov?.totalServices ?? 0} icon="bi-briefcase-fill" color="bg-pink-500/10 text-pink-400" />
               </div>
 
-              <div className="flex flex-col gap-3">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Top cursos por matrículas</p>
-                <div className="space-y-2">
-                  {stats?.top.courses.slice(0, 5).map((c, i) => (
-                    <div key={c.id} className="flex items-center gap-2">
-                      <span className="text-[10px] font-semibold text-muted-foreground w-4 text-right">{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between text-[11px] mb-0.5">
-                          <span className="truncate text-foreground/80">{c.title}</span>
-                          <span className="tabular-nums ml-2 shrink-0">{c._count.Enrollment}</span>
+              {/* ── SECCIÓN: USUARIOS & EMPRESAS (ALTAS) ──────────── */}
+              <Section title="Usuarios y Empresas" icon="bi-people-fill" iconColor="bg-blue-500/10 text-blue-400" delay={0.1}>
+                <div className="space-y-8">
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center border-b border-border/40 pb-6">
+                    <div className="lg:col-span-1">
+                      <h4 className="text-sm font-medium tracking-tight mb-1">Crecimiento de red</h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                        Balance entre altas de empresas y registros de nuevos usuarios.
+                      </p>
+                      <CombinedYearlyHistorySelector 
+                        users={stats?.trends?.usersByMonth || []} 
+                        companies={stats?.trends?.companiesByMonth || []} 
+                        title="Crecimiento global de Atalayas"
+                      />
+                    </div>
+                    <div className="lg:col-span-2 bg-muted/20 p-5 rounded-2xl border border-border/40">
+                      <AdditionsChart users={stats?.trends?.usersByMonth || []} companies={stats?.trends?.companiesByMonth || []} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    <div className="flex flex-col gap-3">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Composición de red</p>
+                      <DonutChart
+                        centerValue={ov?.totalUsers ?? 0}
+                        label="Usuarios"
+                        segments={[
+                          { label: 'Empleados', value: ov?.totalEmployees ?? 0, color: '#10b981' },
+                          { label: 'Admins', value: ov?.totalAdmins ?? 0, color: '#3b82f6' },
+                          { label: 'Invitados', value: Math.max(0, (ov?.totalUsers ?? 0) - (ov?.totalEmployees ?? 0) - (ov?.totalAdmins ?? 0)), color: '#a855f7' },
+                        ]}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Usuarios / mes</p>
+                        <YearlyHistorySelector data={stats?.trends?.usersByMonth || []} title="Altas de Usuarios" theme="blue" />
+                      </div>
+                      <MiniLineChart data={userTrend} theme="blue" />
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Empresas / mes</p>
+                        <YearlyHistorySelector data={stats?.trends?.companiesByMonth || []} title="Altas de Empresas" theme="violet" />
+                      </div>
+                      <MiniLineChart data={companyTrend} theme="violet" />
+                    </div>
+                  </div>
+                </div>
+              </Section>
+
+              {/* ── SECCIÓN NUEVA: DESVINCULACIONES Y BAJAS ───────── */}
+              <Section title="Desvinculaciones y Bajas" icon="bi-person-dash-fill" iconColor="bg-rose-500/10 text-rose-500" delay={0.2}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                  <div className="flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-border/40 pb-6 lg:pb-0 lg:pr-8">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-rose-500" />
+                          <h4 className="text-sm font-medium tracking-tight">Bajas de Usuarios</h4>
                         </div>
-                        <div className="h-1 bg-muted rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(c._count.Enrollment / maxEnrollments) * 100}%` }}
-                            transition={{ delay: 0.08 * i, duration: 0.5, ease: 'easeOut' }}
-                            className="h-full bg-amber-500/70 rounded-full"
-                          />
+                        <p className="text-xs text-muted-foreground mt-1 ml-4">Usuarios desactivados o eliminados — últimos 6 meses</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-semibold tabular-nums tracking-tighter">{totalUserDepartures}</span>
+                        <YearlyHistorySelector data={userDeparturesData} title="Histórico de Bajas (Usuarios)" theme="rose" />
+                      </div>
+                    </div>
+                    <MiniLineChart data={userDepartureTrend} theme="rose" />
+                  </div>
+                  
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-red-600" />
+                          <h4 className="text-sm font-medium tracking-tight">Bajas de Empresas</h4>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-1 ml-4">Empresas dadas de baja — últimos 6 meses</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-semibold tabular-nums tracking-tighter">{totalCompanyDepartures}</span>
+                        <YearlyHistorySelector data={companyDeparturesData} title="Histórico de Bajas (Empresas)" theme="rose" />
                       </div>
                     </div>
-                  ))}
+                    <MiniLineChart data={companyDepartureTrend} theme="rose" />
+                  </div>
                 </div>
-              </div>
-            </div>
-          </Section>
+              </Section>
 
-          {/* ── SECCIÓN: ACTIVIDAD RECIENTE ───────────────────── */}
-          <Section title="Actividad Reciente" icon="bi-clock-history" iconColor="bg-emerald-500/10 text-emerald-400">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Últimos registros</p>
-                <div className="space-y-2">
-                  {stats?.recent.users.map((u) => (
-                    <div key={u.id} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden border border-border/50">
-                        {u.avatarUrl
-                          ? <img src={u.avatarUrl} alt={u.name} className="w-full h-full object-cover" />
-                          : <span className="text-xs font-semibold text-muted-foreground">{u.name?.charAt(0)}</span>
-                        }
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-medium truncate">{u.name}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{u.Company?.name ?? u.email}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded ${roleColor[u.role] ?? 'text-gray-400 bg-gray-400/10'}`}>
-                          {roleLabel[u.role] ?? u.role}
-                        </span>
-                        <span className="text-[9px] text-muted-foreground">{timeAgo(u.createdAt)}</span>
-                      </div>
+              {/* ── SECCIÓN: FORMACIÓN ────────────────────────────── */}
+              <Section title="Formación y Cursos" icon="bi-mortarboard-fill" iconColor="bg-amber-500/10 text-amber-400" delay={0.3}>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Estado de matrículas</p>
+                    <DonutChart
+                      centerValue={ov?.totalEnrollments ?? 0}
+                      label="Matrículas"
+                      segments={[
+                        { label: 'Completados', value: ov?.completedEnrollments ?? 0, color: '#f59e0b' },
+                        { label: 'En proceso', value: (ov?.totalEnrollments ?? 0) - (ov?.completedEnrollments ?? 0), color: '#334155' },
+                      ]}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">KPIs de formación</p>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'Tasa de finalización', value: `${ov?.completionRate ?? 0}%`, bar: ov?.completionRate ?? 0, color: 'bg-amber-500' },
+                        { label: 'Progreso medio', value: `${ov?.avgProgress ?? 0}%`, bar: ov?.avgProgress ?? 0, color: 'bg-orange-500' },
+                        { label: 'Cursos públicos', value: `${ov?.publicCourses ?? 0} / ${ov?.totalCourses ?? 0}`, bar: ov?.totalCourses ? Math.round(((ov?.publicCourses ?? 0) / ov.totalCourses) * 100) : 0, color: 'bg-yellow-500' },
+                      ].map((item, i) => (
+                        <div key={i}>
+                          <div className="flex justify-between text-[11px] mb-1">
+                            <span className="text-muted-foreground">{item.label}</span>
+                            <span className="tabular-nums">{item.value}</span>
+                          </div>
+                          <div className="h-1 bg-muted rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${item.bar}%` }}
+                              transition={{ delay: 0.1 * i, duration: 0.6, ease: 'easeOut' }}
+                              className={`h-full rounded-full ${item.color}`}
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Últimos cursos creados</p>
-                <div className="space-y-2">
-                  {stats?.recent.courses.map((c) => (
-                    <div key={c.id} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0 border border-amber-500/20">
-                        <i className="bi bi-journal-bookmark-fill text-amber-400 text-xs"></i>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-medium truncate">{c.title}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{c.Company?.name ?? (c.category ?? 'Sin categoría')}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded ${c.isPublic ? 'text-emerald-400 bg-emerald-400/10' : 'text-gray-400 bg-gray-400/10'}`}>
-                          {c.isPublic ? 'Público' : 'Privado'}
-                        </span>
-                        <span className="text-[9px] text-muted-foreground">{timeAgo(c.createdAt)}</span>
-                      </div>
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Top cursos por matrículas</p>
+                    <div className="space-y-2">
+                      {stats?.top?.courses?.slice(0, 5).map((c, i) => (
+                        <div key={c.id} className="flex items-center gap-2">
+                          <span className="text-[10px] font-semibold text-muted-foreground w-4 text-right">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between text-[11px] mb-0.5">
+                              <span className="truncate text-foreground/80">{c.title}</span>
+                              <span className="tabular-nums ml-2 shrink-0">{c._count.Enrollment}</span>
+                            </div>
+                            <div className="h-1 bg-muted rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(c._count.Enrollment / maxEnrollments) * 100}%` }}
+                                transition={{ delay: 0.08 * i, duration: 0.5, ease: 'easeOut' }}
+                                className="h-full bg-amber-500/70 rounded-full"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </Section>
+              </Section>
 
-          {/* ── SECCIÓN: GESTIÓN DE ACCESO ────────────────────── */}
-          <Section title="Gestión de Acceso" icon="bi-shield-lock-fill" iconColor="bg-red-500/10 text-red-400" defaultOpen={(ov?.pendingRequests ?? 0) > 0}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-4xl font-semibold tabular-nums tracking-tighter">
-                  {ov?.pendingRequests ?? 0}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {(ov?.pendingRequests ?? 0) === 0
-                    ? 'No hay solicitudes pendientes de revisión.'
-                    : `solicitud${(ov?.pendingRequests ?? 0) > 1 ? 'es' : ''} pendiente${(ov?.pendingRequests ?? 0) > 1 ? 's' : ''} de aprobación`}
-                </p>
-              </div>
-              {(ov?.pendingRequests ?? 0) > 0 && (
-                <a
-                  href="/dashboard/administrator/general-admin/company-request"
-                  className="text-[11px] font-medium bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-xl hover:bg-red-500/20 transition-colors"
-                >
-                  Revisar ahora <i className="bi bi-arrow-right ml-1"></i>
-                </a>
-              )}
-            </div>
-          </Section>
+              {/* ── SECCIÓN: ACTIVIDAD RECIENTE ───────────────────── */}
+              <Section title="Actividad Reciente" icon="bi-clock-history" iconColor="bg-emerald-500/10 text-emerald-400" delay={0.4}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Últimos registros</p>
+                    <div className="space-y-2">
+                      {stats?.recent?.users?.map((u) => (
+                        <div key={u.id} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden border border-border/50">
+                            {u.avatarUrl
+                              ? <img src={u.avatarUrl} alt={u.name} className="w-full h-full object-cover" />
+                              : <span className="text-xs font-semibold text-muted-foreground">{u.name?.charAt(0)}</span>
+                            }
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[12px] font-medium truncate">{u.name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{u.Company?.name ?? u.email}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded ${roleColor[u.role] ?? 'text-gray-400 bg-gray-400/10'}`}>
+                              {roleLabel[u.role] ?? u.role}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground">{timeAgo(u.createdAt)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-        </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Últimos cursos creados</p>
+                    <div className="space-y-2">
+                      {stats?.recent?.courses?.map((c) => (
+                        <div key={c.id} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
+                          <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0 border border-amber-500/20">
+                            <i className="bi bi-journal-bookmark-fill text-amber-400 text-xs"></i>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[12px] font-medium truncate">{c.title}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{c.Company?.name ?? (c.category ?? 'Sin categoría')}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded ${c.isPublic ? 'text-emerald-400 bg-emerald-400/10' : 'text-gray-400 bg-gray-400/10'}`}>
+                              {c.isPublic ? 'Público' : 'Privado'}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground">{timeAgo(c.createdAt)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </Section>
+
+              {/* ── SECCIÓN: GESTIÓN DE ACCESO ────────────────────── */}
+              <Section title="Gestión de Acceso" icon="bi-shield-lock-fill" iconColor="bg-red-500/10 text-red-400" defaultOpen={(ov?.pendingRequests ?? 0) > 0} delay={0.5}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-4xl font-semibold tabular-nums tracking-tighter">
+                      {ov?.pendingRequests ?? 0}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {(ov?.pendingRequests ?? 0) === 0
+                        ? 'No hay solicitudes pendientes de revisión.'
+                        : `solicitud${(ov?.pendingRequests ?? 0) > 1 ? 'es' : ''} pendiente${(ov?.pendingRequests ?? 0) > 1 ? 's' : ''} de aprobación`}
+                    </p>
+                  </div>
+                  {(ov?.pendingRequests ?? 0) > 0 && (
+                    <a
+                      href="/dashboard/administrator/general-admin/company-request"
+                      className="text-[11px] font-medium bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-xl hover:bg-red-500/20 transition-colors"
+                    >
+                      Revisar ahora <i className="bi bi-arrow-right ml-1"></i>
+                    </a>
+                  )}
+                </div>
+              </Section>
+
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

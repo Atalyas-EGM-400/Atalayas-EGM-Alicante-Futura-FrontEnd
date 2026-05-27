@@ -86,23 +86,20 @@ export default function DocumentsExplorerPage() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden font-sans text-foreground">
-      <Sidebar role={currentUser.role} />
       
       <main className="flex-1 flex flex-col overflow-hidden relative">
         <PageHeader 
           title="Centro de Documentos"
           description="Gestiona y visualiza la documentación oficial."
-          icon={<i className="bi bi-folder2-open"></i>}
+          icon={<i className="bi bi-folder-fill"></i>}
           action={
-            (currentUser.role === 'ADMIN' || currentUser.role === 'GENERAL_ADMIN') && (
-              <Link href="/dashboard/documents/new">
-                <button className="flex items-center gap-2 px-6 py-2.5 bg-[#FF5C00] text-white rounded-full font-black text-[10px] lg:text-xs uppercase tracking-[0.15em] transition-all shadow-lg shadow-orange-500/20 hover:bg-[#E65200] active:scale-95">
-                  <i className="bi bi-plus-lg text-sm"></i>
+              <Link href="/dashboard/administrator/general-admin/documents/new">
+                <button               
+              className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm">                  <i className="bi bi-plus-lg text-sm"></i>
                   <span className="hidden sm:inline">Subir archivo</span>
                   <span className="sm:hidden">Subir</span>
                 </button>
               </Link>
-            )
           }
         />
 
@@ -207,7 +204,7 @@ export default function DocumentsExplorerPage() {
             {/* BOTÓN DE DESPLIEGUE: Siempre anclado al borde del panel (320px) */}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="absolute left-[320px] top-1/2 -translate-y-1/2 w-8 h-14 bg-card border-y border-r border-border flex items-center justify-center rounded-r-2xl shadow-xl hover:bg-muted transition-colors lg:w-6 lg:h-12 lg:rounded-r-lg z-50"
+              className="absolute left-80 top-1/2 -translate-y-1/2 w-8 h-14 bg-card border-y border-r border-border flex items-center justify-center rounded-r-2xl shadow-xl hover:bg-muted transition-colors lg:w-6 lg:h-12 lg:rounded-r-lg z-50"
             >
               <i className={`bi ${isSidebarOpen ? 'bi-chevron-left' : 'bi-chevron-right'} text-muted-foreground`}></i>
             </button>

@@ -116,7 +116,6 @@ export default function GeneralAdminServiceDetail() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground">
-      <Sidebar role="GENERAL_ADMIN" />
 
       <main className="flex-1 overflow-auto flex flex-col relative">
         <PageHeader 
@@ -130,7 +129,7 @@ export default function GeneralAdminServiceDetail() {
                 {saveSuccess && <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest animate-pulse">Guardado</span>}
                 {!isEditing ? (
                   <>
-                    <button onClick={() => setIsEditing(true)} className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all flex items-center gap-2 shadow-sm">
+                    <button onClick={() => setIsEditing(true)}               className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm">
                       <i className="bi bi-pencil"></i> Editar
                     </button>
                     <button onClick={() => setShowDeleteModal(true)} className="bg-white/10 text-white hover:bg-destructive hover:text-white w-9 h-9 rounded-xl transition-all flex items-center justify-center border border-white/10">

@@ -79,7 +79,6 @@ function EmployeeServicesContent() {
 
     return (
         <div className="flex min-h-screen bg-background font-sans text-foreground overflow-hidden">
-            <Sidebar role="EMPLOYEE" />
             <main className="flex-1 h-screen overflow-y-auto flex flex-col relative no-scrollbar">
                 <PageHeader 
                     title="Servicios"

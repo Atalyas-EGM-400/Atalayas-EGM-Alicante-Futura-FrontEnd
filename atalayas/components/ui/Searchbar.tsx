@@ -24,7 +24,7 @@ export default function SearchInput({ value, onChange, placeholder }: SearchInpu
         className={`
           flex items-center transition-all duration-500 ease-in-out overflow-hidden
           ${isExpanded 
-            ? 'w-full max-w-md bg-card border border-border shadow-sm px-4' 
+            ? 'w-64 lg:w-80 bg-card border border-border shadow-sm px-4' 
             : 'w-12 bg-transparent border border-transparent'}
           rounded-2xl h-full
         `}

@@ -31,6 +31,11 @@ export default function EmployeeSuggestionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filter, setFilter] = useState<SuggestionStatus>('PENDING');
 
+  // Estados para el Modal de Confirmación
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [suggestionToDelete, setSuggestionToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [targetRole, setTargetRole] = useState<"ADMIN" | "GENERAL_ADMIN">("ADMIN");
@@ -95,16 +100,30 @@ export default function EmployeeSuggestionsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar sugerencia?")) return;
+  // Abre el modal y guarda la referencia de ID
+  const openDeleteModal = (id: string) => {
+    setSuggestionToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Ejecuta el borrado final desde el modal
+  const confirmDelete = async () => {
+    if (!suggestionToDelete) return;
+    setIsDeleting(true);
     try {
-      const res = await fetch(`${API_ROUTES.SUGGESTIONS.DELETE(id)}`, {
+      const res = await fetch(`${API_ROUTES.SUGGESTIONS.DELETE(suggestionToDelete)}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      if (res.ok) fetchMySuggestions();
+      if (res.ok) {
+        fetchMySuggestions();
+      }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+      setSuggestionToDelete(null);
     }
   };
 
@@ -115,9 +134,7 @@ export default function EmployeeSuggestionsPage() {
   );
 
   return (
-    // CAMBIO: bg-background en lugar de color fijo hexadecimal
-    <div className="flex min-h-screen bg-background font-sans text-foreground">
-      <Sidebar role="EMPLOYEE" />
+    <div className="flex min-h-screen bg-background font-sans text-foreground relative">
 
       <main className="flex-1 flex flex-col overflow-hidden">
         <PageHeader 
@@ -128,7 +145,7 @@ export default function EmployeeSuggestionsPage() {
 
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           
-          {/* FORMULARIO DE ENVÍO - CAMBIO: bg-card y border-border */}
+          {/* FORMULARIO DE ENVÍO */}
           <div className="w-full lg:w-112.5 p-8 border-r border-border bg-card overflow-y-auto no-scrollbar">
             <h3 className="text-xl font-black mb-2 text-foreground">Tu voz cuenta</h3>
             <p className="text-sm text-muted-foreground mb-8">Participa en la mejora de tu entorno.</p>
@@ -142,15 +159,14 @@ export default function EmployeeSuggestionsPage() {
                   <button 
                     type="button" 
                     onClick={() => setTargetRole("ADMIN")} 
-                    // CAMBIO: bg-card en el botón activo
-                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold transition-all ${targetRole === "ADMIN" ? "bg-card shadow-sm text-primary" : "text-muted-foreground"}`}
+                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${targetRole === "ADMIN" ? "bg-card shadow-sm text-primary" : "text-muted-foreground"}`}
                   >
                     Mi empresa
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setTargetRole("GENERAL_ADMIN")} 
-                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold transition-all ${targetRole === "GENERAL_ADMIN" ? "bg-card shadow-sm text-primary" : "text-muted-foreground"}`}
+                    className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${targetRole === "GENERAL_ADMIN" ? "bg-card shadow-sm text-primary" : "text-muted-foreground"}`}
                   >
                     Atalayas EGM
                   </button>
@@ -162,7 +178,6 @@ export default function EmployeeSuggestionsPage() {
                   value={title} 
                   onChange={(e) => setTitle(e.target.value)} 
                   placeholder="Título breve..." 
-                  // CAMBIO: bg-background y focus
                   className="w-full p-4 bg-background border border-border rounded-2xl text-sm font-bold focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-muted-foreground/50" 
                   required 
                 />
@@ -186,18 +201,17 @@ export default function EmployeeSuggestionsPage() {
             </form>
           </div>
 
-          {/* LISTADO / HISTORIAL - CAMBIO: bg-background (más ligero que la sidebar) */}
+          {/* LISTADO / HISTORIAL */}
           <div className="flex-1 p-8 bg-background/50 overflow-y-auto no-scrollbar">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Mi Historial</h3>
               
-              {/* Filtros - CAMBIO: bg-card */}
               <div className="flex gap-1.5 bg-card p-1 rounded-xl border border-border shadow-sm">
                 {(['ALL', 'PENDING', 'ACCEPTED', 'REJECTED'] as const).map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
+                    className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all cursor-pointer ${
                       filter === f ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
                     }`}
                   >
@@ -220,7 +234,6 @@ export default function EmployeeSuggestionsPage() {
                 filteredSuggestions.map((s) => {
                   const config = statusConfig[s.status];
                   return (
-                    // CAMBIO: bg-card y border-border
                     <div key={s.id} className="group bg-card border border-border rounded-[32px] p-8 shadow-sm hover:shadow-md transition-all relative">
                       
                       <div className="flex justify-between items-start mb-6">
@@ -237,8 +250,8 @@ export default function EmployeeSuggestionsPage() {
                           <span className="text-[10px] text-muted-foreground/60 font-bold">{new Date(s.createdAt).toLocaleDateString()}</span>
                           {s.status === "PENDING" && (
                             <button 
-                              onClick={() => handleDelete(s.id)} 
-                              className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-all hover:bg-destructive hover:text-white flex items-center justify-center"
+                              onClick={() => openDeleteModal(s.id)} // 👈 CAMBIO AQUÍ
+                              className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-all hover:bg-destructive hover:text-white flex items-center justify-center cursor-pointer"
                             >
                               <i className="bi bi-trash3 text-xs"></i>
                             </button>
@@ -250,7 +263,6 @@ export default function EmployeeSuggestionsPage() {
                       <p className="text-sm text-muted-foreground leading-relaxed mb-6 whitespace-pre-wrap">{s.content}</p>
 
                       {s.response && (
-                        // CAMBIO: bg-muted y border-border
                         <div className="bg-muted/50 p-5 rounded-2xl border border-border relative mt-4">
                           <div className="absolute -top-2 left-4 px-2 bg-card border border-border rounded text-[8px] font-black uppercase text-primary">
                             Respuesta Oficial
@@ -268,6 +280,48 @@ export default function EmployeeSuggestionsPage() {
           </div>
         </div>
       </main>
+
+      {/* --- MODAL DE CONFIRMACIÓN DE BORRADO --- */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Fondo desenfocado */}
+          <div 
+            className="absolute inset-0 bg-background/40 backdrop-blur-md transition-opacity"
+            onClick={() => !isDeleting && setIsDeleteModalOpen(false)}
+          />
+          
+          {/* Caja del Modal */}
+          <div className="bg-card border border-border rounded-[32px] p-8 max-w-md w-full shadow-2xl relative z-10 scale-100 transition-all">
+            <div className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mb-6">
+              <i className="bi bi-exclamation-triangle text-xl"></i>
+            </div>
+            
+            <h3 className="text-xl font-black text-foreground mb-2">¿Eliminar sugerencia?</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-8">
+              Esta acción es irreversible. Tu propuesta se borrará de forma permanente de tu historial y de los buzones correspondientes.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={confirmDelete}
+                className="px-6 py-3 bg-destructive text-destructive-foreground rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-destructive/90 hover:shadow-lg hover:shadow-destructive/20 transition-all disabled:opacity-50"
+              >
+                {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

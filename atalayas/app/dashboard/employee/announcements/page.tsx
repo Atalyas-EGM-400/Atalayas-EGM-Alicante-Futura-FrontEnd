@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/ui/Sidebar';
 import PageHeader from '@/components/ui/pageHeader';
 import SearchInput from '@/components/ui/Searchbar';
 import { API_ROUTES, fetchWithApiFallback } from '@/lib/utils';
@@ -131,7 +130,6 @@ export default function EmployeeAnnouncementsPage() {
 
   return (
     <div className="flex h-screen bg-[#f5f5f7] dark:bg-[#0d0d0f] overflow-hidden">
-      <Sidebar role="EMPLOYEE" />
       
       <main className="flex-1 flex flex-col min-w-0 bg-white/40 dark:bg-transparent backdrop-blur-3xl">
         <PageHeader 

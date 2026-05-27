@@ -97,7 +97,7 @@ export default function NewDocumentPage() {
         throw new Error(errorData.message || 'Error al subir el documento al servidor');
       }
 
-      router.push('/dashboard/documents');
+      router.push('/dashboard/administrator/general-admin/documents');
       
     } catch (err: any) { 
       setError(err.message); 
@@ -117,14 +117,13 @@ export default function NewDocumentPage() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans">
-      <Sidebar role={currentUser.role} />
       <main className="flex-1 flex flex-col overflow-auto">
         
         <PageHeader 
             title="Subir Documento"
             description="Añade archivos al sistema y configura su visibilidad corporativa."
             icon={<i className="bi bi-cloud-arrow-up"></i>}
-            backUrl="/dashboard/documents"
+            backUrl="/dashboard/administrator/general-admin/documents"
         />
 
         <div className="p-6 lg:p-10 flex justify-center">
@@ -164,7 +163,7 @@ export default function NewDocumentPage() {
                           <i className="bi bi-cloud-arrow-up text-3xl"></i>
                         </div>
                         <span className="text-sm font-bold text-foreground mb-1">Selecciona un archivo</span>
-                        <span className="text-xs text-muted-foreground font-medium text-center max-w-[250px]">Formatos soportados: PDF, DOCX, Imágenes (Máx. 10MB)</span>
+                        <span className="text-xs text-muted-foreground font-medium text-center max-w-62.5">Formatos soportados: PDF, DOCX, Imágenes (Máx. 10MB)</span>
                         <input type="file" ref={fileInputRef} onChange={(e) => setFile(e.target.files?.[0] || null)} className="hidden" />
                     </div>
                   ) : (
@@ -174,7 +173,7 @@ export default function NewDocumentPage() {
                           <i className={`bi ${file.type === 'application/pdf' ? 'bi-file-pdf' : 'bi-file-earmark-text'}`}></i>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-foreground truncate max-w-[200px] sm:max-w-[300px]">{file.name}</span>
+                          <span className="text-sm font-bold text-foreground truncate max-w-50 sm:max-w-75">{file.name}</span>
                           <span className="text-[10px] font-black text-muted-foreground uppercase">{formatSize(file.size)}</span>
                         </div>
                       </div>

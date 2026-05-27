@@ -40,13 +40,12 @@ export default function NewGeneralService() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground">
-      <Sidebar role="GENERAL_ADMIN" />
 
       <main className="flex-1 overflow-auto flex flex-col relative">
         <PageHeader 
           title="Nuevo Servicio Global"
           description="Añade un servicio al catálogo general o a una empresa específica."
-          icon={<i className="bi bi-briefcase"></i>}
+          icon={<i className="bi bi-briefcase-fill"></i>}
           backUrl="/dashboard/administrator/general-admin/services"
         />
 

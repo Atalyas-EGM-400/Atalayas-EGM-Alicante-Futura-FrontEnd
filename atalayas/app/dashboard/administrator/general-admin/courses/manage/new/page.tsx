@@ -60,19 +60,15 @@ export default function GeneralAdminNewCoursePage() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans">
-      <Sidebar role="GENERAL_ADMIN" />
       <main className="flex-1 overflow-auto flex flex-col">
         <PageHeader
           title="Nuevo Curso"
           description="Crea contenido formativo global disponible para todas las empresas."
           icon={<i className="bi bi-plus-circle-fill"></i>}
+          backUrl="/dashboard/administrator/general-admin/courses/manage"
         />
 
         <div className="p-6 lg:p-10 max-w-3xl mx-auto w-full">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-muted-foreground hover:text-primary font-bold text-sm mb-6 transition-colors">
-            <i className="bi bi-arrow-left"></i> Volver a la lista
-          </button>
-
           <form onSubmit={handleSubmit} className="bg-card p-8 lg:p-10 rounded-[2.5rem] border border-border shadow-sm space-y-8">
 
             <div className="space-y-2">
@@ -86,13 +82,20 @@ export default function GeneralAdminNewCoursePage() {
               />
             </div>
 
-
             {/* Categorías */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button type="button" onClick={() => setFormData({ ...formData, category: 'BASICO' })} className={`p-4 rounded-2xl border-2 font-bold transition-all ${formData.category === 'BASICO' ? 'border-primary bg-primary/5 text-primary' : 'border-transparent bg-muted/50 text-muted-foreground'}`}>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, category: 'BASICO' })}
+                className={`p-4 rounded-2xl border-2 font-bold transition-all ${formData.category === 'BASICO' ? 'border-primary bg-primary/5 text-primary' : 'border-transparent bg-muted/50 text-muted-foreground'}`}
+              >
                 📖 Onboarding
               </button>
-              <button type="button" onClick={() => setFormData({ ...formData, category: 'ESPECIALIZADO' })} className={`p-4 rounded-2xl border-2 font-bold transition-all ${formData.category === 'ESPECIALIZADO' ? 'border-primary bg-primary/5 text-primary' : 'border-transparent bg-muted/50 text-muted-foreground'}`}>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, category: 'ESPECIALIZADO' })}
+                className={`p-4 rounded-2xl border-2 font-bold transition-all ${formData.category === 'ESPECIALIZADO' ? 'border-primary bg-primary/5 text-primary' : 'border-transparent bg-muted/50 text-muted-foreground'}`}
+              >
                 🎓 Especialización
               </button>
             </div>

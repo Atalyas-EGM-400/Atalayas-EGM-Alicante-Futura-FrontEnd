@@ -12,6 +12,18 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Función para mensajes de validación
+  const handleInvalid = (e: React.FormEvent<HTMLInputElement>, fieldName: string) => {
+    const target = e.target as HTMLInputElement;
+    if (target.validity.valueMissing) {
+      target.setCustomValidity(`Por favor, introduce tu ${fieldName}`);
+    } else if (target.validity.typeMismatch) {
+      target.setCustomValidity('Formato de correo no válido');
+    } else {
+      target.setCustomValidity('');
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -25,8 +37,13 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Error al iniciar sesión');
-
+if (!res.ok) {
+        // Control de errores específicos del servidor
+        if (res.status === 401) throw new Error('El correo o la contraseña son incorrectos.');
+        if (res.status === 404) throw new Error('Este usuario no existe en nuestro sistema.');
+        if (res.status === 429) throw new Error('Demasiados intentos. Inténtalo más tarde.');
+        throw new Error(data.message || 'Hubo un problema al conectar con el servidor.');
+      }
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -40,7 +57,9 @@ export default function LoginPage() {
       else router.push('/dashboard/public');
       
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message === 'Failed to fetch' 
+        ? 'No se pudo conectar con el servidor. Revisa tu conexión.' 
+        : err.message);
     } finally {
       setLoading(false);
     }
@@ -57,11 +76,13 @@ export default function LoginPage() {
         {/* Cabecera / Logo */}
         <nav className="flex items-center px-8 lg:px-12 py-8">
           <div className="flex items-center gap-3">
-            <div className="w-15 h-15 rounded-xl flex items-center justify-center bg-white shadow-lg shadow-primary/20">
-              <img src="/favicon.ico" alt="Logo" className="w-10 h-10" />
-            </div>
-            <span className="text-foreground text-xl font-extrabold tracking-tight">
-              Atalayas
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-15 h-15 rounded-xl flex items-center justify-center bg-white shadow-lg shadow-primary/20">
+                <img src="/favicon.ico" alt="Logo" className="w-10 h-10" />
+              </div>
+            </Link>
+            <span className="text-foreground text-xl font-bold tracking-tight">
+              Atalayas EGM
             </span>
           </div>
         </nav>
@@ -93,6 +114,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onInvalid={(e) => handleInvalid(e, 'correo electrónico')}
                   placeholder="ejemplo@empresa.com"
                   required
                   className="w-full bg-card border border-input rounded-2xl px-5 py-4 text-sm text-foreground font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm"
@@ -109,7 +131,10 @@ export default function LoginPage() {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) =>{ setPassword(e.target.value);
+                    e.target.setCustomValidity('');
+                  }}
+                  onInvalid={(e) => handleInvalid (e, 'contraseña')}
                   placeholder="••••••••"
                   required
                   className="w-full bg-card border border-input rounded-2xl px-5 py-4 text-sm text-foreground font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all shadow-sm"
@@ -131,12 +156,6 @@ export default function LoginPage() {
 
             {/* Links inferiores */}
             <div className="mt-10 pt-8 border-t border-border space-y-4">
-              <p className="text-center text-muted-foreground text-sm font-medium">
-                ¿No tienes cuenta?{' '}
-                <Link href="/register" className="text-foreground font-bold hover:text-secondary hover:underline transition-all">
-                  Regístrate como empleado
-                </Link>
-              </p>
               <p className="text-center text-muted-foreground text-sm font-medium">
                 ¿Eres una empresa del polígono?{' '}
                 <Link href="/company-register" className="text-foreground font-bold hover:text-primary hover:underline transition-all">

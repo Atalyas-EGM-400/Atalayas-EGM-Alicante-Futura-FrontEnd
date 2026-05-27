@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { API_ROUTES } from '@/lib/utils';
 
 interface SidebarProps {
   role: 'GENERAL_ADMIN' | 'ADMIN' | 'EMPLOYEE' | 'PUBLIC';
@@ -14,14 +15,15 @@ type NavGroup = { group: string; items: NavItem[] };
 const navItems = {
   GENERAL_ADMIN: [
     { label: 'Panel', href: '/dashboard/administrator/general-admin', icon: <i className="bi bi-grid-fill"></i> },
-    { label: 'Perfil Empresa', href: '/dashboard/administrator/general-admin/company', icon: <i className="bi bi-building-gear"></i> },
+    { label: 'Perfil Empresa', href: '/dashboard/administrator/general-admin/edit-company', icon: <i className="bi bi-building-fill"></i> },
     { label: 'Empresas', href: '/dashboard/administrator/general-admin/companies', icon: <i className="bi bi-buildings-fill"></i> },
-    { label: 'Usuarios', href: '/dashboard/administrator/employees', icon: <i className="bi bi-people-fill"></i>},
+    { label: 'Usuarios', href: '/dashboard/administrator/general-admin/employees', icon: <i className="bi bi-people-fill"></i>},
     { label: 'Cursos', href: '/dashboard/administrator/general-admin/courses/manage', icon: <i className="bi bi-journal-bookmark-fill"></i> },
-    { label: 'Documentos', href: '/dashboard/documents', icon: <i className="bi bi-folder-fill"></i> },
+    { label: 'Documentos', href: '/dashboard/administrator/general-admin/documents', icon: <i className="bi bi-folder-fill"></i> },
     { label: 'Servicios', href: '/dashboard/administrator/general-admin/services', icon: <i className="bi bi-briefcase-fill"></i> },
     { label: 'Anuncios', href: '/dashboard/administrator/general-admin/announcements', icon: <i className="bi bi-megaphone-fill"></i> },
-    { label: 'Ecosistema', href: '/dashboard/administrator/general-admin/community', icon: <i className="bi bi-globe-americas"></i>},
+    { label: 'Eventos', href: '/dashboard/administrator/general-admin/events', icon: <i className="bi bi-calendar-event-fill"></i> },
+    { label: 'Ecosistema', href: '/dashboard/administrator/general-admin/community', icon: <i className="bi bi-diagram-3-fill"></i>},
     { label: 'Solicitudes', href: '/dashboard/administrator/general-admin/company-request', icon: <i className="bi bi-envelope-open-fill "></i> },
     { label: 'Sugerencias', href: '/dashboard/administrator/general-admin/suggestions', icon: <i className="bi bi-mailbox2"></i>},
     /* label: 'Matriculación masiva', href: '/dashboard/administrator/bulk-enroll', icon: <i className="bi bi-bar-chart-fill"></i> */
@@ -30,13 +32,14 @@ const navItems = {
   ADMIN: [
     { label: 'Panel', href: '/dashboard/administrator/admin', icon: <i className="bi bi-house-fill"></i> },
     { label: 'Mi Empresa', href: '/dashboard/administrator/admin/company', icon: <i className="bi bi-building-fill"></i> },
-    { label: 'Empleados', href: '/dashboard/administrator/employees', icon: <i className="bi bi-people-fill"></i>},
-    { label: 'Onboarding', href: '/dashboard/administrator/onboarding', icon: <i className="bi bi-person-walking"></i>},
+    { label: 'Empleados', href: '/dashboard/administrator/admin/employees', icon: <i className="bi bi-people-fill"></i>},
+    { label: 'Onboarding', href: '/dashboard/administrator/admin/onboarding', icon: <i className="bi bi-rocket-takeoff-fill"></i>},
     { label: 'Cursos', href: '/dashboard/administrator/admin/courses/manage', icon: <i className="bi bi-mortarboard-fill"></i> },
-    { label: 'Documentos', href: '/dashboard/documents', icon: <i className="bi bi-file-earmark-text-fill"></i> },
+    { label: 'Documentos', href: '/dashboard/administrator/admin/documents', icon: <i className="bi bi-file-earmark-text-fill"></i> },
     { label: 'Servicios', href: '/dashboard/administrator/admin/services', icon: <i className="bi bi-suitcase-lg-fill"></i> },
     { label: 'Anuncios', href: '/dashboard/administrator/admin/announcements', icon: <i className="bi bi-megaphone-fill"></i> },
-    { label: 'Ecosistema', href: '/dashboard/administrator/admin/community', icon: <i className="bi bi-globe-americas"></i>},
+    { label: 'Eventos', href: '/dashboard/administrator/admin/events', icon: <i className="bi bi-calendar-event-fill"></i> },
+    { label: 'Ecosistema', href: '/dashboard/administrator/admin/community', icon: <i className="bi bi-diagram-3-fill"></i>},
     { label: 'Sugerencias', href: '/dashboard/administrator/admin/suggestions', icon: <i className="bi bi-mailbox"></i>},
     { label: 'Estadísticas', href: '/dashboard/administrator/admin/stats', icon: <i className="bi bi-bar-chart-fill"></i> },
 
@@ -45,10 +48,11 @@ const navItems = {
     { label: 'Panel', href: '/dashboard/employee', icon: <i className="bi bi-grid-fill"></i> },
     { label: 'Onboarding', href: '/dashboard/employee/onboarding', icon: <i className="bi bi-rocket-takeoff-fill"></i> },
     { label: 'Mis Cursos', href: '/dashboard/employee/courses', icon: <i className="bi bi-journal-bookmark-fill"></i> },
-    { label: 'Documentos', href: '/dashboard/documents', icon: <i className="bi bi-folder-fill"></i> },
+    { label: 'Documentos', href: '/dashboard/employee/documents', icon: <i className="bi bi-folder-fill"></i> },
     { label: 'Servicios', href: '/dashboard/employee/services', icon: <i className="bi bi-briefcase-fill"></i> },
     { label: 'Anuncios', href: '/dashboard/employee/announcements', icon: <i className="bi bi-megaphone-fill "></i> },
-    { label: 'Ecosistema', href: '/dashboard/employee/community', icon: <i className="bi bi-globe-americas"></i>},
+    { label: 'Eventos', href: '/dashboard/employee/events', icon: <i className="bi bi-calendar-event-fill"></i> },
+    { label: 'Ecosistema', href: '/dashboard/employee/community', icon: <i className="bi bi-diagram-3-fill"></i>},
     { label: 'Sugerencias', href: '/dashboard/employee/suggestions', icon: <i className="bi bi-mailbox2"></i>},
   ],
   PUBLIC: [
@@ -114,6 +118,44 @@ export default function Sidebar({ role }: SidebarProps) {
     return () => window.removeEventListener('resize', checkResizing);
   }, []);
 
+  // Dentro de tu componente Sidebar...
+
+useEffect(() => {
+  const fetchPendingCounts = async () => {
+    // Solo hacemos la petición si el usuario es administrador
+    if (role !== 'GENERAL_ADMIN') return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const res = await fetch(API_ROUTES.COMPANY_REQUESTS.GET_PENDING , {
+        method: 'GET',
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        
+        // 1. Actualizamos el estado local para que se vea YA
+        setPendingRequestsCount(data.requests || 0);
+
+        // 2. Sincronizamos el localStorage para que otros componentes lo sepan
+        localStorage.setItem('count_requests', String(data.requests || 0));
+      }
+    } catch (error) {
+      console.error("Error al obtener conteos iniciales:", error);
+    }
+  };
+
+  if (mounted) {
+    fetchPendingCounts();
+  }
+}, [mounted, role]); // Se ejecuta al montar y si el rol cambia
+
   useEffect(() => {
     const updateCounts = () => {
       setPendingRequestsCount(Number(localStorage.getItem('count_requests')) || 0);
@@ -122,6 +164,52 @@ export default function Sidebar({ role }: SidebarProps) {
     updateCounts();
     return () => window.removeEventListener('local-storage-update', updateCounts);
   }, []);
+
+  useEffect(() => {
+  // Función centralizada para cargar el usuario
+  const loadUser = () => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) setUser(JSON.parse(savedUser));
+  };
+
+  // Carga inicial
+  loadUser();
+
+  // 👇 NUEVO: Escuchar el evento personalizado 👇
+  const handleLogoUpdate = () => {
+    console.log("🟠 Sidebar: Escuchando evento de actualización de logo, recargando usuario...");
+    loadUser(); // Recargamos el usuario del localStorage (donde estará el nuevo logo)
+  };
+
+  // Añadimos el listener para nuestro evento custom
+  window.addEventListener('company_logo_updated', handleLogoUpdate);
+
+  // Configuración del tema y listeners existentes...
+  const savedTheme = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const initialTheme = savedTheme === 'dark' || (!savedTheme && prefersDark);
+  setIsDark(initialTheme);
+  
+  if (initialTheme) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+
+  setMounted(true);
+
+  const checkResizing = () => {
+    if (window.innerWidth < 1024) setCollapsed(true);
+  };
+  window.addEventListener('resize', checkResizing);
+
+  // 👇 NUEVO: Limpieza del listener en el desmontado 👇
+  return () => {
+    window.removeEventListener('resize', checkResizing);
+    window.removeEventListener('company_logo_updated', handleLogoUpdate);
+    };
+  }, []);
+
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -144,16 +232,19 @@ export default function Sidebar({ role }: SidebarProps) {
   };
 
   const checkActive = (href: string) => {
-  // Coincidencia exacta
+  // 1. Si son exactamente iguales, activo (esto sirve para todas)
   if (pathname === href) return true;
-  
-  // Evitar que "Panel" marque todo como activo si es solo "/"
-  if (href === '/dashboard/administrator/admin' || href === '/dashboard/employee') {
-     return pathname === href;
+
+  // 2. Definimos qué rutas NO deben usar "startsWith" para evitar el efecto cascada
+  const isPanel = href.endsWith('/admin') || href.endsWith('/general-admin') || href.endsWith('/employee');
+
+  if (isPanel) {
+    return pathname === href; // Coincidencia estricta para el Panel
   }
 
-  // Si la ruta actual empieza por el href y no es la raíz del dashboard
-  return href !== '/dashboard' && pathname.startsWith(href) && pathname[href.length] === '/';
+  // 3. Para lo demás (Cursos, Empresas, etc.), permitimos que se mantengan 
+  // activos si estamos en una sub-ruta (ej: /companies/edit/123)
+  return pathname.startsWith(href);
 };
 
   if (!mounted) return null;
@@ -166,8 +257,7 @@ export default function Sidebar({ role }: SidebarProps) {
       {!mobileOpen && (
         <button 
           onClick={() => setMobileOpen(true)}
-          className="lg:hidden fixed top-20 left-5 z-9999 w-12 h-12 bg-white dark:bg-card border border-border shadow-xl rounded-2xl flex items-center justify-center text-primary transition-all active:scale-90"
-        >
+className="lg:hidden fixed bottom-6 left-6 z-50 w-14 h-14 bg-primary text-white shadow-2xl rounded-full flex items-center justify-center active:scale-90"        >
           <i className="bi bi-list text-2xl"></i>
         </button>
       )}
@@ -181,7 +271,7 @@ export default function Sidebar({ role }: SidebarProps) {
 
       {/* Estructura del Aside Corregida */}
       <aside className={`
-        fixed lg:sticky top-0 left-0 h-screen bg-card border-r border-border flex flex-col transition-all duration-300 z-10001 shrink-0 font-sans
+        fixed lg:sticky top-0 left-0 h-screen bg-card border-r border-border flex flex-col transition-[width, transform] duration-300 z-10001 shrink-0 font-sans
         ${mobileOpen ? 'translate-x-0 w-70' : '-translate-x-full lg:translate-x-0'}
         ${collapsed ? 'w-16 lg:w-16' : 'w-60'}
       `}>
@@ -189,7 +279,7 @@ export default function Sidebar({ role }: SidebarProps) {
         <div className={`flex items-center justify-between border-b border-border transition-all duration-300 ${!showText ? 'h-20 px-0 justify-center' : 'h-24 px-4 gap-3'}`}>
           <div className={`
             bg-white rounded-[18px] shadow-sm border border-gray-200/60 dark:border-white/10 flex items-center justify-center overflow-hidden transition-all
-            ${!showText ? 'w-12 h-12 p-1.5' : 'flex-1 h-14 p-2.5'}
+            ${!showText ? 'w-12 h-12' : 'w-full h-20 flex items-center justify-center'}
           `}>
             <img src={displayLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
           </div>

@@ -25,13 +25,13 @@ const ATALAYAS_INFO = [
   },
   {
     title: "Talento y Vivero",
-    desc: "Fomentamos la formación dual y el acceso a una bolsa de empleo especializada en el sector industrial y tecnológico.",
+    desc: "Fomentamos la formación especializada en el sector industrial y tecnológico.",
     img: "/images/talento.jpg",
     color: "text-orange-500"
   },
   {
     title: "Conectividad 4.0",
-    desc: "Infraestructura de alta disponibilidad con fibra simétrica y monitorización avanzada para la industria del futuro.",
+    desc: "Infraestructura de alta disponibilidad con monitorización avanzada.",
     img: "/images/infraestructura.jpg",
     color: "text-indigo-400"
   }
@@ -132,9 +132,9 @@ export default function LandingPage() {
                 <div className="space-y-4">
                     {[
                         { title: 'Capacitación', desc: 'Formación técnica y talento dual.', icon: 'bi-mortarboard' },
-                        { title: 'Subvenciones', desc: 'Gestión de ayudas y fondos europeos.', icon: 'bi-bank' },
+                        { title: 'Servicios', desc: 'Explora los beneficios a tu disposición.', icon: 'bi-bank' },
                         { title: 'Networking', desc: 'Conexiones industriales directas.', icon: 'bi-people' },
-                        { title: 'Digitalización', desc: 'Transformación y tecnología 4.0.', icon: 'bi-cpu' }
+                        { title: 'Digitalización', desc: 'Transformación y tecnología.', icon: 'bi-cpu' }
                     ].map((serv, i) => (
                         <div key={i} className="flex items-start gap-4 transition-all">
                             <div className="w-8 h-8 rounded-lg bg-foreground/5 border border-foreground/10 flex items-center justify-center shrink-0">
@@ -163,7 +163,7 @@ export default function LandingPage() {
               <h2 className={`text-5xl sm:text-6xl md:text-7xl lg:text-[90px] font-black tracking-tighter leading-[0.9] text-transparent bg-clip-text pb-2 ${PREMIUM_GRADIENT}`}>Innovación.</h2>
             </div>
             <p className="max-w-md mx-auto lg:mx-0 text-lg md:text-xl font-medium text-muted-foreground leading-relaxed mb-10 md:mb-12 px-4 lg:px-0">Mucho más que un espacio industrial. Somos el vivero donde las medianas empresas alicantinas se conectan e innovan.</p>
-            <Link href="/register" className="inline-block px-10 md:px-12 py-4 md:py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] transition-all hover:scale-105 shadow-xl shadow-orange-500/20">Registrar mi Empresa</Link>
+            <Link href="/company-register" className="inline-block px-10 md:px-12 py-4 md:py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] transition-all hover:scale-105 shadow-xl shadow-orange-500/20">Registrar mi Empresa</Link>
           </div>
         </div>
       </section>

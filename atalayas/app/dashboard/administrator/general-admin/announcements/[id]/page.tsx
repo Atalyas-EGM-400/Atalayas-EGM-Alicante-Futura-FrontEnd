@@ -48,7 +48,6 @@ export default function AnnouncementDetailPage() {
   return (
     <div className="flex min-h-screen bg-[#f5f5f7] dark:bg-[#0d0d0f] font-sans text-foreground overflow-hidden">
       {/* Sidebar actualizado a GENERAL_ADMIN */}
-      <Sidebar role="GENERAL_ADMIN" />
 
       <main className="flex-1 overflow-auto flex flex-col no-scrollbar">
         

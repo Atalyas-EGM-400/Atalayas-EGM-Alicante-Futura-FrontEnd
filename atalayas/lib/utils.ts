@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://zoological-passion-atalayas.up.railway.app";
+/*const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://zoological-passion-atalayas.up.railway.app";*/
+const BASE_URL = "http://localhost:3000"
 
 export const API_ROUTES = {
   AUTH: {
@@ -50,11 +51,17 @@ export const API_ROUTES = {
       `${BASE_URL}/courses/${courseId}/content/${contentId}`,
     DELETE: (courseId: string, contentId: string) =>
       `${BASE_URL}/courses/${courseId}/content/${contentId}`,
+    VIEW: (courseId: string, contentId: string) =>
+      `${BASE_URL}/courses/${courseId}/content/${contentId}/view`,
+    COMPLETE_LAB: (courseId: string, contentId: string) =>
+      `${BASE_URL}/courses/${courseId}/content/${contentId}/complete-lab`,
   },
   ANNOUNCEMENTS: {
     GET_ALL: `${BASE_URL}/announcement`,
     CREATE: `${BASE_URL}/announcement`,
     GET_BY_ID: (id: string) => `${BASE_URL}/announcement/${id}`,
+    UPDATE: (id: string) => `${BASE_URL}/announcement/${id}`,
+    DELETE: (id: string) => `${BASE_URL}/announcement/${id}`,
   },
   COMPANY_REQUESTS: {
     CREATE: `${BASE_URL}/company-request`,
@@ -64,12 +71,14 @@ export const API_ROUTES = {
     ARCHIVE: (id: string) => `${BASE_URL}/company-request/${id}/archive`,
     UNARCHIVE: (id: string) => `${BASE_URL}/company-request/${id}/unarchive`,
     GET_ARCHIVED: `${BASE_URL}/company-request?archived=true`,
+    GET_PENDING: `${BASE_URL}/company-request/pending-counts`
   },
 
   ONBOARDING: {
     SETUP: `${BASE_URL}/onboarding/setup`,
     ME: `${BASE_URL}/onboarding/me`,
     TOGGLE: `${BASE_URL}/onboarding/toggle`,
+    EMPLOYEE: `${BASE_URL}/onboarding/employee`,
   },
 
   CHATBOT: {
@@ -97,11 +106,35 @@ export const API_ROUTES = {
 
   STATS: {
     GET_ADMIN: `${BASE_URL}/stats`,
-    GET_GENERAL: `${BASE_URL}/admin/stats`,
+    GET_GENERAL: `${BASE_URL}/stats/general`,
   },
 
   ACTIVITY: {
     GET_MY: (limit = 5) => `${BASE_URL}/activity/me?limit=${limit}`,
+  },
+
+  EVENTS: {
+    CREATE: `${BASE_URL}/events`,
+    GET_ALL: `${BASE_URL}/events`,
+    GET_BY_ID: (id: string) => `${BASE_URL}/events/${id}`,
+    UPDATE: (id: string) => `${BASE_URL}/events/${id}`,
+    DELETE: (id: string) => `${BASE_URL}/events/${id}`,
+  },
+
+  NOTIFICATIONS: {
+    RESET: `${BASE_URL}/notifications/reset-count`,
+    COUNT: `${BASE_URL}/notifications/unread-count`,
+
+  },
+
+  COMMUNITY: {
+    CREATE: `${BASE_URL}/community`,
+    CREATE_WITH_UPLOAD: `${BASE_URL}/community/upload`, // Para cuando el General Admin sube un archivo local
+    GET_ALL: `${BASE_URL}/community`,
+    GET_TYPES: `${BASE_URL}/community/tipos`,          // El endpoint para alimentar el autocompletado y los botones de filtro
+    GET_ONE: (id: string) => `${BASE_URL}/community/${id}`,
+    UPDATE: (id: string) => `${BASE_URL}/community/${id}`,
+    DELETE: (id: string) => `${BASE_URL}/community/${id}`,
   },
 };
 

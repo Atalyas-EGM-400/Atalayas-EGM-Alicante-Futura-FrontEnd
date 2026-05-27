@@ -42,7 +42,6 @@ export default function ServiceDetail() {
   return (
     // Bloqueamos el overflow horizontal en la raíz
     <div className="flex min-h-screen w-full bg-background font-sans text-foreground overflow-hidden">
-      <Sidebar role="EMPLOYEE" />
 
       {/* Scroll natural vertical, sin barras y bloqueado en horizontal */}
       <main className="flex-1 flex flex-col relative w-full overflow-y-auto overflow-x-hidden no-scrollbar">

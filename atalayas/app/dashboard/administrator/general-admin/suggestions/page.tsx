@@ -110,14 +110,13 @@ export default function GeneralAdminSuggestionsPage() {
 
   return (
     <div className="flex min-h-screen bg-muted/30 font-sans text-foreground transition-colors duration-300">
-      <Sidebar role="GENERAL_ADMIN" />
 
       <main className="flex-1 flex flex-col overflow-hidden">
         <PageHeader
           title="Buzón de Sugerencias"
           description={
             pendingCount > 0
-              ? `Hay ${pendingCount} sugerencia${pendingCount > 1 ? "s" : ""} global${pendingCount > 1 ? "es" : ""} sin procesar.`
+              ? `Hay ${pendingCount} sugerencia${pendingCount > 1 ? "s" : ""} sin procesar.`
               : "Revisa las propuestas de mejora enviadas por empresas y usuarios del ecosistema."
           }
           icon={<i className="bi bi-mailbox2"></i>}

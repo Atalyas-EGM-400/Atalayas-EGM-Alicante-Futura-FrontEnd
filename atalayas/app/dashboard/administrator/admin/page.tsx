@@ -80,6 +80,14 @@ export default function AdminDashboard() {
             suggestionsRes.json(), documentsRes.json(), statsRes.json(), enrollmentsRes.json(),
           ]);
 
+          const sortedCourses = Array.isArray(coursesData) 
+  ? [...coursesData].sort((a, b) => {
+      // Si a es privado y b público, a va primero (-1)
+      if (a.isPublic === b.isPublic) return 0;
+      return a.isPublic ? 1 : -1;
+    })
+  : [];
+
         // 2. PROCESAMIENTO SEGURO DE SUGERENCIAS
         // Convertimos a array por si el backend envía un objeto de mapeo
         const allSuggestions = Array.isArray(suggestionsData) 
@@ -98,8 +106,7 @@ export default function AdminDashboard() {
           (statsData?.onboarding?.total ?? 0) - (statsData?.onboarding?.finished ?? 0);
 
         // Actualización de estados
-        setCourses(Array.isArray(coursesData) ? coursesData.slice(0, 5) : []);
-        setAnnouncements(Array.isArray(announcementsData) ? announcementsData.slice(0, 3) : []);
+setCourses(sortedCourses.slice(0, 5));        setAnnouncements(Array.isArray(announcementsData) ? announcementsData.slice(0, 3) : []);
         
         // Solo mostramos las 3 sugerencias pendientes más recientes en la lista visual
         setSuggestions(pendingSuggestionsList.slice(0, 3));
@@ -168,7 +175,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans">
-      <Sidebar role="ADMIN" />
 
       <main className="flex-1 overflow-auto flex flex-col">
         <PageHeader
@@ -259,7 +265,7 @@ export default function AdminDashboard() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-foreground truncate">{course.title}</p>
-                            <p className="text-[11px] text-muted-foreground">{enrolled} inscrito(s)</p>
+                            {/*<p className="text-[11px] text-muted-foreground">{enrolled} inscrito(s)</p>*/}
                           </div>
                           {enrolled > 0 && (
                             <div className="flex items-center gap-2 shrink-0">

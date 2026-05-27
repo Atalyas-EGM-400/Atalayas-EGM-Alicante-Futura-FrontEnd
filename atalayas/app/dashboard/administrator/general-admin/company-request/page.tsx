@@ -165,7 +165,6 @@ export default function CompanyRequestsPage() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground">
-      <Sidebar role="GENERAL_ADMIN" />
 
       <main className="flex-1 flex flex-col overflow-hidden relative">
         
@@ -175,7 +174,7 @@ export default function CompanyRequestsPage() {
             ? `Pendiente de revisión: ${pendingCount} nueva${pendingCount > 1 ? 's' : ''} petición${pendingCount > 1 ? 'es' : ''}.` 
             : "Registro histórico y validación de empresas."
           }
-          icon={<i className={`bi bi-shield-check text-transparent bg-clip-text ${PREMIUM_GRADIENT}`}></i>}
+          icon={<i className={`bi bi-envelope-open bg-clip-text ${PREMIUM_GRADIENT}`}></i>}
           action={
             <div className="w-full md:w-80">
               <SearchBar 

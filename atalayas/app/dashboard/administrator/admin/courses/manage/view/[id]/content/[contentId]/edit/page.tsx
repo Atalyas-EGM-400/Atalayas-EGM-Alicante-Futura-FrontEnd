@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/ui/Sidebar';
 import PageHeader from '@/components/ui/pageHeader';
 import { API_ROUTES } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminContentEdit() {
     const params = useParams();
@@ -106,7 +107,6 @@ export default function AdminContentEdit() {
             setTimeout(() => {
                 router.push(`/dashboard/administrator/admin/courses/manage/view/${courseId}/content/${contentId}`);
             }, 2000);
-
         } catch (error) {
             console.error("Error updating content:", error);
             setError("Error al guardar los cambios");
@@ -116,15 +116,13 @@ export default function AdminContentEdit() {
     };
 
     if (loading) return (
-        <div className="flex min-h-screen bg-background items-center justify-center">
+        <div className="flex min-h-screen bg-[#f5f5f7] dark:bg-[#0d0d0f] items-center justify-center">
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
     );
 
     return (
-        <div className="flex min-h-screen bg-background font-sans text-foreground">
-            <Sidebar role="ADMIN" />
-
+        <div className="flex min-h-screen bg-[#f5f5f7] dark:bg-[#0d0d0f] overflow-hidden font-sans text-foreground">
             <main className="flex-1 overflow-auto flex flex-col relative">
                 <PageHeader
                     title="Editar Contenido"
@@ -134,30 +132,50 @@ export default function AdminContentEdit() {
                 />
 
                 <div className="p-6 lg:p-10 flex-1 max-w-4xl mx-auto w-full">
-                    {/* Badge informativa para ADMIN */}
-                    <div className="mb-6 flex items-center gap-2 text-xs text-muted-foreground bg-primary/10 rounded-full px-3 py-1.5 w-fit">
+                    <motion.div
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, ease: "easeOut" }}
+                        className="mb-6 flex items-center gap-2 text-xs text-muted-foreground bg-primary/10 rounded-full px-3 py-1.5 w-fit"
+                    >
                         <i className="bi bi-shield-check"></i>
                         <span>Modo edición - Administrador (Gestión completa)</span>
-                    </div>
+                    </motion.div>
 
-                    {/* Mensajes de éxito/error */}
-                    {success && (
-                        <div className="mb-6 bg-green-500/10 border border-green-500 text-green-700 rounded-2xl p-4 flex items-center gap-3">
-                            <i className="bi bi-check-circle-fill text-green-600"></i>
-                            <span className="text-sm font-medium">{success}</span>
-                        </div>
-                    )}
+                    <AnimatePresence mode="wait">
+                        {success && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="mb-6 bg-green-500/10 border border-green-500 text-green-700 rounded-2xl p-4 flex items-center gap-3"
+                            >
+                                <i className="bi bi-check-circle-fill text-green-600"></i>
+                                <span className="text-sm font-medium">{success}</span>
+                            </motion.div>
+                        )}
 
-                    {error && (
-                        <div className="mb-6 bg-red-500/10 border border-red-500 text-red-700 rounded-2xl p-4 flex items-center gap-3">
-                            <i className="bi bi-exclamation-triangle-fill text-red-600"></i>
-                            <span className="text-sm font-medium">{error}</span>
-                        </div>
-                    )}
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="mb-6 bg-red-500/10 border border-red-500 text-red-700 rounded-2xl p-4 flex items-center gap-3"
+                            >
+                                <i className="bi bi-exclamation-triangle-fill text-red-600"></i>
+                                <span className="text-sm font-medium">{error}</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Título */}
-                        <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+                    <motion.form
+                        onSubmit={handleSubmit}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, ease: "easeOut", delay: 0.05 }}
+                        className="space-y-6"
+                    >
+                        <div className="bg-white dark:bg-[#1c1c1e] border border-gray-100 dark:border-white/5 rounded-[2.25rem] p-6 shadow-sm space-y-4">
                             <label className="block">
                                 <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">
                                     Título del contenido *
@@ -173,7 +191,6 @@ export default function AdminContentEdit() {
                                 />
                             </label>
 
-                            {/* Resumen/Descripción corta */}
                             <label className="block">
                                 <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">
                                     Resumen / Descripción corta
@@ -188,7 +205,6 @@ export default function AdminContentEdit() {
                                 />
                             </label>
 
-                            {/* Descripción completa */}
                             <label className="block">
                                 <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">
                                     Descripción completa
@@ -204,9 +220,8 @@ export default function AdminContentEdit() {
                             </label>
                         </div>
 
-                        {/* Tipo, orden y duración */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-card border border-border rounded-2xl p-6">
+                            <motion.div whileHover={{ y: -3 }} className="bg-white dark:bg-[#1c1c1e] border border-gray-100 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
                                 <label className="block">
                                     <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">
                                         Tipo de contenido
@@ -224,9 +239,9 @@ export default function AdminContentEdit() {
                                         <option value="quiz">Quiz</option>
                                     </select>
                                 </label>
-                            </div>
+                            </motion.div>
 
-                            <div className="bg-card border border-border rounded-2xl p-6">
+                            <motion.div whileHover={{ y: -3 }} className="bg-white dark:bg-[#1c1c1e] border border-gray-100 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
                                 <label className="block">
                                     <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">
                                         Orden / Posición
@@ -240,9 +255,9 @@ export default function AdminContentEdit() {
                                         placeholder="1, 2, 3..."
                                     />
                                 </label>
-                            </div>
+                            </motion.div>
 
-                            <div className="bg-card border border-border rounded-2xl p-6">
+                            <motion.div whileHover={{ y: -3 }} className="bg-white dark:bg-[#1c1c1e] border border-gray-100 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
                                 <label className="block">
                                     <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">
                                         Duración (minutos)
@@ -256,11 +271,10 @@ export default function AdminContentEdit() {
                                         placeholder="Ej: 15"
                                     />
                                 </label>
-                            </div>
+                            </motion.div>
                         </div>
 
-                        {/* URL del recurso */}
-                        <div className="bg-card border border-border rounded-2xl p-6">
+                        <div className="bg-white dark:bg-[#1c1c1e] border border-gray-100 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
                             <label className="block">
                                 <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">
                                     URL del recurso (video, audio, PDF)
@@ -282,8 +296,7 @@ export default function AdminContentEdit() {
                             )}
                         </div>
 
-                        {/* URL de la imagen */}
-                        <div className="bg-card border border-border rounded-2xl p-6">
+                        <div className="bg-white dark:bg-[#1c1c1e] border border-gray-100 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
                             <label className="block">
                                 <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">
                                     URL de la imagen / miniatura
@@ -298,24 +311,30 @@ export default function AdminContentEdit() {
                                 />
                             </label>
 
-                            {formData.imageUrl && (
-                                <div className="mt-4">
-                                    <p className="text-[10px] text-muted-foreground mb-2">Vista previa:</p>
-                                    <img
-                                        src={formData.imageUrl}
-                                        alt="Preview"
-                                        className="w-40 h-32 object-cover rounded-xl border border-border shadow-sm"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
-                                        }}
-                                    />
-                                </div>
-                            )}
+                            <AnimatePresence>
+                                {formData.imageUrl && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -8 }}
+                                        className="mt-4"
+                                    >
+                                        <p className="text-[10px] text-muted-foreground mb-2">Vista previa:</p>
+                                        <img
+                                            src={formData.imageUrl}
+                                            alt="Preview"
+                                            className="w-40 h-32 object-cover rounded-xl border border-border shadow-sm"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                            }}
+                                        />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
 
-                        {/* Publicado y opciones adicionales para ADMIN */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-card border border-border rounded-2xl p-6">
+                            <div className="bg-white dark:bg-[#1c1c1e] border border-gray-100 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
                                 <label className="flex items-center gap-3 cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -331,7 +350,7 @@ export default function AdminContentEdit() {
                                 </p>
                             </div>
 
-                            <div className="bg-card border border-border rounded-2xl p-6">
+                            <div className="bg-white dark:bg-[#1c1c1e] border border-gray-100 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
                                 <label className="block">
                                     <span className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-2">
                                         ID del contenido (solo lectura)
@@ -346,7 +365,6 @@ export default function AdminContentEdit() {
                             </div>
                         </div>
 
-                        {/* Botones */}
                         <div className="flex gap-4 pt-4">
                             <button
                                 type="submit"
@@ -376,7 +394,6 @@ export default function AdminContentEdit() {
                             </button>
                         </div>
 
-                        {/* Botón adicional para volver al listado */}
                         <div className="pt-2">
                             <button
                                 type="button"
@@ -387,7 +404,7 @@ export default function AdminContentEdit() {
                                 Volver al listado de contenidos
                             </button>
                         </div>
-                    </form>
+                    </motion.form>
                 </div>
             </main>
         </div>
