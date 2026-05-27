@@ -67,18 +67,30 @@ export default function DocumentsExplorerPage() {
     } catch (err) { console.error(err); }
   };
 
-  const filteredDocs = documents.filter(doc => {
+ const filteredDocs = documents.filter(doc => {
+    // 1. Filtro de seguridad por Rol: El ADMIN solo puede ver lo suyo o lo Global del sistema
     if (currentUser?.role === 'ADMIN') {
+      const isGlobal = doc.isPublic === true && !doc.companyId;
       const isMyCompany = String(doc.companyId) === String(currentUser.companyId);
-      if (!doc.isPublic && !isMyCompany) return false;
+      
+      // Si no es global del sistema y tampoco pertenece a su empresa, se descarta fulminantemente
+      if (!isGlobal && !isMyCompany) return false;
     }
-    if (filter === 'public' && !doc.isPublic) return false;
-    if (filter === 'private' && doc.isPublic) return false;
+
+    // 2. Definición semántica de Filtros Visuales ('all' | 'public' | 'private')
+    // Consideramos "público/compartido" si es global del sistema o si es de la empresa pero general (userId vacío)
+    const isSharedOrPublic = doc.isPublic || (doc.companyId && !doc.userId);
+
+    if (filter === 'public' && !isSharedOrPublic) return false;
+    if (filter === 'private' && isSharedOrPublic) return false;
+
+    // 3. Filtro del buscador por texto
     if (searchTerm.trim() !== '') {
       const normalizedTitle = doc.title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
       const normalizedSearch = searchTerm.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
       return normalizedTitle.includes(normalizedSearch);
     }
+
     return true; 
   });
 

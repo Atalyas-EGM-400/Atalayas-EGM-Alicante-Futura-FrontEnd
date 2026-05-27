@@ -16,7 +16,7 @@ export default function GlobalManageCourses() {
   // Estados de Filtros (se mantienen igual)
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'BASICO' | 'ESPECIALIZADO'>('ALL');
-  const [showOnlyPublic, setShowOnlyPublic] = useState(false);
+  const [showOnlyPublic, setShowOnlyPublic] = useState(true);
 
   // Estados para el Selector de Empresas
   const [companySearch, setCompanySearch] = useState('');

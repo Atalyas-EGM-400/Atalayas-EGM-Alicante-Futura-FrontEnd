@@ -15,7 +15,7 @@ type NavGroup = { group: string; items: NavItem[] };
 const navItems = {
   GENERAL_ADMIN: [
     { label: 'Panel', href: '/dashboard/administrator/general-admin', icon: <i className="bi bi-grid-fill"></i> },
-    { label: 'Perfil Empresa', href: '/dashboard/administrator/general-admin/company', icon: <i className="bi bi-building-fill"></i> },
+    { label: 'Perfil Empresa', href: '/dashboard/administrator/general-admin/edit-company', icon: <i className="bi bi-building-fill"></i> },
     { label: 'Empresas', href: '/dashboard/administrator/general-admin/companies', icon: <i className="bi bi-buildings-fill"></i> },
     { label: 'Usuarios', href: '/dashboard/administrator/general-admin/employees', icon: <i className="bi bi-people-fill"></i>},
     { label: 'Cursos', href: '/dashboard/administrator/general-admin/courses/manage', icon: <i className="bi bi-journal-bookmark-fill"></i> },

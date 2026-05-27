@@ -49,6 +49,10 @@ export default function EmployeesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showInactive, setShowInactive] = useState(false);
 
+  // --- Estados de Paginación ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10; // Cambia este número para mostrar más o menos filas por página
+
   // Modal eliminar
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -101,6 +105,11 @@ export default function EmployeesPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Resetear a la página 1 cada vez que se alteren los filtros globales
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCompany, showInactive]);
 
   const handleDelete = async () => {
     if (!userToDelete) return;
@@ -183,7 +192,8 @@ export default function EmployeesPage() {
     URL.revokeObjectURL(url);
   };
 
-  const displayedUsers = users
+  // 1. Filtrado y ordenación total de usuarios
+  const allFilteredUsers = users
     .filter((user) => {
       const matchCompany =
         selectedCompany === 'ALL' ||
@@ -206,23 +216,30 @@ export default function EmployeesPage() {
       return (rolesOrder[a.role] || 99) - (rolesOrder[b.role] || 99);
     });
 
+  // 2. Cálculos matemáticos de la paginación
+  const totalPages = Math.ceil(allFilteredUsers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  
+  // 3. Segmentar únicamente los usuarios que corresponden a la página activa
+  const displayedUsers = allFilteredUsers.slice(startIndex, endIndex);
+
   const inactiveCount = users.filter((u) => u.status === 'INACTIVE').length;
 
   if (!currentUser) return null;
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-background font-sans text-foreground">
-
       <main className="flex-1 overflow-x-hidden flex flex-col relative">
         <PageHeader
           title={
             currentUser.role === 'GENERAL_ADMIN'
-              ? 'Gestión Global'
+              ? 'Gestión de Usuarios'
               : 'Empleados'
           }
           description={
             currentUser.role === 'GENERAL_ADMIN'
-              ? 'Control de perfiles y empresas'
+              ? 'Administra los usuarios de la plataforma'
               : 'Administra tu equipo'
           }
           icon={<i className="bi bi-people-fill"></i>}
@@ -248,7 +265,7 @@ export default function EmployeesPage() {
               )}
               <Link
                 href="/dashboard/administrator/general-admin/employees/new"
-              className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
+                className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
               >
                 <i className="bi bi-person-plus-fill"></i> Nuevo
               </Link>
@@ -472,6 +489,58 @@ export default function EmployeesPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* BARRA DE CONTROLES DE PAGINACIÓN */}
+            {!loading && allFilteredUsers.length > 0 && (
+              <div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/10 text-xs">
+                <p className="text-muted-foreground font-medium text-center sm:text-left">
+                  Mostrando <span className="text-foreground font-bold">{startIndex + 1}</span> al{' '}
+                  <span className="text-foreground font-bold">
+                    {Math.min(endIndex, allFilteredUsers.length)}
+                  </span>{' '}
+                  de <span className="text-foreground font-bold">{allFilteredUsers.length}</span> usuarios
+                </p>
+
+                <div className="flex items-center gap-1.5 justify-center">
+                  {/* Botón página anterior */}
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl border border-input bg-background hover:bg-muted font-bold transition-all disabled:opacity-40 disabled:hover:bg-background"
+                  >
+                    <i className="bi bi-chevron-left"></i>
+                  </button>
+
+                  {/* Números de página */}
+                  {[...Array(totalPages)].map((_, index) => {
+                    const pageNumber = index + 1;
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`w-8 h-8 rounded-xl font-bold transition-all ${
+                          currentPage === pageNumber
+                            ? 'bg-secondary text-secondary-foreground shadow-sm'
+                            : 'border border-input bg-background hover:bg-muted text-foreground'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  })}
+
+                  {/* Botón página siguiente */}
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl border border-input bg-background hover:bg-muted font-bold transition-all disabled:opacity-40 disabled:hover:bg-background"
+                  >
+                    <i className="bi bi-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </main>

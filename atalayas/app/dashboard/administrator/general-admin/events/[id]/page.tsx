@@ -121,20 +121,33 @@ export default function GAdminEventDetailPage() {
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
+      
       formData.append("title", editForm.title);
       formData.append("description", editForm.description);
       formData.append("event_date", editForm.event_date);
       formData.append("location", editForm.location);
       
-      const cId = editForm.companyId === "public" ? "" : editForm.companyId;
-      formData.append("companyId", cId);
+      // --- CORRECCIÓN AQUÍ ---
+      // Solo enviamos companyId si es un UUID real. Si es "public" o está vacío, NO lo añadimos al FormData.
+      if (editForm.companyId && editForm.companyId !== "public" && editForm.companyId !== "") {
+        formData.append("companyId", editForm.companyId);
+      } else {
+        // Opción A: Si tu backend necesita recibir explícitamente la instrucción de remover la empresa, envías una cadena vacía solo si el backend la limpia.
+        // Opción B (Recomendada): No agregarla, para que el backend la interprete como nula o mantenga el estado.
+        // Si tu backend requiere el campo obligatoriamente, puedes forzar que envíe null como un string reproducible en tu backend saneado.
+      }
 
-      if (editForm.max_capacity) formData.append("max_capacity", editForm.max_capacity);
-      if (selectedFile) formData.append("file", selectedFile);
+      if (editForm.max_capacity) {
+        formData.append("max_capacity", editForm.max_capacity);
+      }
+      
+      if (selectedFile) {
+        formData.append("file", selectedFile);
+      }
 
       const res = await fetch(API_ROUTES.EVENTS.UPDATE(params.id as string), {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }, // RECUERDA: NO pongas Content-Type en multipart/form-data
         body: formData,
       });
 
@@ -142,7 +155,9 @@ export default function GAdminEventDetailPage() {
         setIsEditModalOpen(false);
         fetchDetail();
       } else {
-        alert("Error al actualizar");
+        // Intentar leer el error del backend para dar feedback preciso
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.message || "Error al actualizar");
       }
     } catch (err) {
       alert("Error de conexión");

@@ -273,7 +273,7 @@ export default function NewEmployeePage() {
                     onChange={(e) => setForm({ ...form, role: e.target.value })}
                     className="w-full bg-background border border-input rounded-xl px-5 py-3 text-sm font-bold focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none cursor-pointer transition-all shadow-sm"
                   >
-                    <option value="EMPLOYEE">Empleado Estándar</option>
+                    <option value="EMPLOYEE">Empleado</option>
                     <option value="ADMIN">Administrador de Empresa</option>
                   </select>
                 </div>

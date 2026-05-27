@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Sidebar from '@/components/ui/Sidebar';
 import PageHeader from '@/components/ui/pageHeader';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
 import { API_ROUTES } from '@/lib/utils';
 
 // --- Interfaces ---
@@ -17,7 +15,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: string;
+  role: 'GENERAL_ADMIN' | 'ADMIN' | 'EMPLOYEE' | 'PUBLIC';
   jobRole?: string;
   companyId: string | null;
   createdAt: string;
@@ -26,19 +24,22 @@ interface User {
 }
 
 // --- Constantes de Estilo ---
-const ROLE_LABELS: Record<string, string> = {
+const ROLE_LABELS: Record<User['role'], string> = {
   GENERAL_ADMIN: 'Súper Admin',
   ADMIN: 'Admin Empresa',
   EMPLOYEE: 'Empleado',
   PUBLIC: 'Público',
 };
 
-const ROLE_COLORS: Record<string, string> = {
+const ROLE_COLORS: Record<User['role'], string> = {
   GENERAL_ADMIN: 'bg-purple-100 text-purple-700 border border-purple-200',
   ADMIN: 'bg-blue-100 text-blue-700 border border-blue-200',
   EMPLOYEE: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
   PUBLIC: 'bg-orange-100 text-orange-700 border border-orange-200',
 };
+
+// CONSTANTE DE PAGINACIÓN
+const ITEMS_PER_PAGE = 10;
 
 export default function EmployeesPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -46,55 +47,19 @@ export default function EmployeesPage() {
   const [availableJobRoles, setAvailableJobRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingRoles, setLoadingRoles] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string>('ALL');
   const [selectedJobRole, setSelectedJobRole] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // ESTADO DE PAGINACIÓN
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Estado para el modal de eliminación
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('token') : '';
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const headers = { Authorization: `Bearer ${getToken()}` };
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-      setCurrentUser(storedUser);
-
-      const [usersRes, compRes] = await Promise.all([
-        fetch(API_ROUTES.USERS.GET_ALL, { headers }),
-        fetch(API_ROUTES.COMPANIES.GET_ALL, { headers }).catch(() => null)
-      ]);
-
-      const usersData = await usersRes.json();
-
-      if (compRes && compRes.ok) {
-        const compData = await compRes.json();
-        setCompanies(Array.isArray(compData) ? compData : []);
-      }
-
-      if (Array.isArray(usersData)) {
-        if (storedUser.role === 'ADMIN') {
-          const filtered = usersData.filter(u =>
-            String(u.companyId || '').trim() === String(storedUser.companyId || '').trim()
-          );
-          setUsers(filtered);
-        } else {
-          setUsers(usersData);
-        }
-      }
-
-      // Cargar roles de trabajo disponibles
-      await fetchAvailableJobRoles();
-    } catch (err) {
-      console.error("Error cargando datos:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchAvailableJobRoles = async () => {
     setLoadingRoles(true);
@@ -120,9 +85,54 @@ export default function EmployeesPage() {
     }
   };
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const headers = { Authorization: `Bearer ${getToken()}` };
+      const storedUser: User = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      if (!storedUser.id) return;
+      setCurrentUser(storedUser);
+
+      const [usersRes, compRes] = await Promise.all([
+        fetch(API_ROUTES.USERS.GET_ALL, { headers }),
+        fetch(API_ROUTES.COMPANIES.GET_ALL, { headers }).catch(() => null)
+      ]);
+
+      const usersData = await usersRes.json();
+
+      if (compRes && compRes.ok) {
+        const compData = await compRes.json();
+        setCompanies(Array.isArray(compData) ? compData : []);
+      }
+
+      if (Array.isArray(usersData)) {
+        if (storedUser.role === 'ADMIN') {
+          const filtered = usersData.filter(u =>
+            String(u.companyId || '').trim() === String(storedUser.companyId || '').trim()
+          );
+          setUsers(filtered);
+        } else {
+          setUsers(usersData);
+        }
+      }
+
+      await fetchAvailableJobRoles();
+    } catch (err) {
+      console.error("Error cargando datos:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Resetear a la página 1 cuando cambie cualquier filtro o búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCompany, selectedJobRole]);
 
   const handleDelete = async () => {
     if (!userToDelete) return;
@@ -148,18 +158,16 @@ export default function EmployeesPage() {
 
   const handleDownloadCSV = () => {
     const employeesToExport = users.filter(user => user.role === 'EMPLOYEE');
-    const csvRows = [['nombre', 'email', 'rol', 'puesto']];
+    const csvRows = ['\uFEFFnombre,email,rol,puesto'];
 
     employeesToExport.forEach(employee => {
-      csvRows.push([
-        employee.name || '',
-        employee.email || '',
-        'EMPLOYEE',
-        employee.jobRole || ''
-      ]);
+      const name = employee.name?.includes(',') ? `"${employee.name}"` : (employee.name || '');
+      const jobRole = employee.jobRole?.includes(',') ? `"${employee.jobRole}"` : (employee.jobRole || '');
+      
+      csvRows.push([name, employee.email || '', 'EMPLOYEE', jobRole].join(','));
     });
 
-    const csvContent = csvRows.map(row => row.join(',')).join('\n');
+    const csvContent = csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -171,8 +179,8 @@ export default function EmployeesPage() {
     URL.revokeObjectURL(url);
   };
 
-  // Filtrar usuarios
-  const displayedUsers = users
+  // 1. Filtrar y ordenar la lista completa primero
+  const filteredUsers = users
     .filter(user => {
       const matchCompany = selectedCompany === 'ALL' || String(user.companyId) === String(selectedCompany);
       const matchJobRole = !selectedJobRole || user.jobRole === selectedJobRole;
@@ -186,13 +194,20 @@ export default function EmployeesPage() {
       return (rolesOrder[a.role] || 99) - (rolesOrder[b.role] || 99);
     });
 
+  // 2. Cálculos matemáticos de paginación
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  
+  // 3. Segmentar los usuarios que se van a renderizar en la vista actual
+  const displayedUsers = filteredUsers.slice(startIndex, endIndex);
+
   const hasActiveJobRoleFilter = selectedJobRole !== '';
 
   if (!currentUser) return null;
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-background font-sans text-foreground">
-
       <main className="flex-1 overflow-x-hidden flex flex-col relative">
         <PageHeader
           title={currentUser.role === 'GENERAL_ADMIN' ? "Gestión Global" : "Empleados"}
@@ -231,10 +246,7 @@ export default function EmployeesPage() {
 
             {/* FILTROS */}
             <div className="p-4 border-b border-border flex flex-col gap-4 bg-muted/20">
-
-              {/* Primera fila: Búsqueda de nombre y filtro de empresa (derecha) */}
               <div className="flex flex-col sm:flex-row items-center gap-4">
-                {/* Búsqueda por nombre/email */}
                 <div className="relative w-full sm:flex-1">
                   <i className="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"></i>
                   <input
@@ -246,7 +258,6 @@ export default function EmployeesPage() {
                   />
                 </div>
 
-                {/* Filtro por Empresa (solo GENERAL_ADMIN) - A la derecha */}
                 {currentUser.role === 'GENERAL_ADMIN' && (
                   <div className="w-full sm:w-auto relative">
                     <select
@@ -262,7 +273,6 @@ export default function EmployeesPage() {
                 )}
               </div>
 
-              {/* Segunda fila: Filtro por Rol de Trabajo (barra de búsqueda) */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="relative w-full sm:max-w-xs">
                   <i className="bi bi-briefcase absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm"></i>
@@ -293,7 +303,6 @@ export default function EmployeesPage() {
                   )}
                 </div>
 
-                {/* Badge de filtro activo */}
                 {hasActiveJobRoleFilter && (
                   <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-600 text-[10px] font-semibold">
                     <i className="bi bi-check-circle-fill text-[8px]"></i>
@@ -303,9 +312,9 @@ export default function EmployeesPage() {
               </div>
             </div>
 
-            {/* TABLA RESPONSIVE */}
-            <div className="overflow-x-auto scrollbar-hide">
-              <table className="w-full text-left min-w-150 md:min-w-full">
+            {/* TABLA */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[600px] md:min-w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                     <th className="px-6 py-4">Usuario</th>
@@ -397,6 +406,55 @@ export default function EmployeesPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* CONTROLES DE PAGINACIÓN */}
+            {!loading && totalPages > 1 && (
+              <div className="p-4 border-t border-border bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p className="text-xs text-muted-foreground font-medium">
+                  Mostrando del <span className="font-bold text-foreground">{startIndex + 1}</span> al{' '}
+                  <span className="font-bold text-foreground">
+                    {Math.min(endIndex, filteredUsers.length)}
+                  </span>{' '}
+                  de <span className="font-bold text-foreground">{filteredUsers.length}</span> empleados
+                </p>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="h-9 px-3 rounded-xl border border-input bg-background text-foreground text-xs font-bold transition-all hover:bg-muted disabled:opacity-40 disabled:hover:bg-background flex items-center gap-1"
+                  >
+                    <i className="bi bi-chevron-left"></i>
+                  </button>
+
+                  {[...Array(totalPages)].map((_, index) => {
+                    const pageNumber = index + 1;
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`h-9 w-9 rounded-xl text-xs font-bold transition-all border ${
+                          currentPage === pageNumber
+                            ? 'bg-secondary border-secondary text-secondary-foreground shadow-sm'
+                            : 'bg-background border-input text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="h-9 px-3 rounded-xl border border-input bg-background text-foreground text-xs font-bold transition-all hover:bg-muted disabled:opacity-40 disabled:hover:bg-background flex items-center gap-1"
+                  >
+                    <i className="bi bi-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </main>

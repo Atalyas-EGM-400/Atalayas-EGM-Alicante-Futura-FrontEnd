@@ -67,7 +67,11 @@ export default function AdminContentDetail() {
 
     useEffect(() => {
         if (zoomRef.current && content?.imageUrl) {
-            const zoom = mediumZoom(zoomRef.current, { background: 'rgba(0,0,0,0.8)', margin: 24 });
+            const zoom = mediumZoom(zoomRef.current, {
+                background: 'rgba(0,0,0,0.9)',
+                margin: 16,
+                scrollOffset: 0,
+            });
             return () => { zoom.detach(); };
         }
     }, [content?.imageUrl]);
@@ -148,12 +152,12 @@ export default function AdminContentDetail() {
                             </div>
 
                             {content.imageUrl && (
-                                <div className="overflow-hidden rounded-3xl border border-border shadow-md">
+                                <div className="overflow-hidden rounded-3xl border border-border shadow-md bg-muted/30 flex justify-center">
                                     <img
                                         ref={zoomRef}
                                         src={content.imageUrl}
                                         alt={content.title}
-                                        className="w-full h-auto cursor-zoom-in hover:opacity-95 transition-opacity"
+                                        className="block w-full aspect-[4/3] md:aspect-[16/10] object-cover object-center cursor-zoom-in hover:opacity-95 transition-opacity"
                                         loading="lazy"
                                     />
                                 </div>

@@ -122,7 +122,7 @@ export default function GeneralAdminCourseManagePage() {
                     <thead>
                       <tr className="bg-muted/10 border-b border-border">
                         <th className="px-5 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Título y descripción</th>
-                        <th className="px-5 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest w-32">Tipo</th>
+                        <th className="px-9 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest w-32">Tipo</th>
                         <th className="px-5 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-widest text-right w-24">Acciones</th>
                       </tr>
                     </thead>
@@ -145,14 +145,11 @@ export default function GeneralAdminCourseManagePage() {
                               )}
                             </td>
                             <td className="px-5 py-3 align-top">
-                              <div className="flex gap-1.5 mt-0.5">
-                                {content.url?.includes('.mp3') ? (
-                                  <span className="bg-indigo-500/10 text-indigo-500 text-[9px] font-black px-1.5 py-0.5 rounded border border-indigo-500/20 uppercase tracking-tighter">Podcast</span>
+                              <div className="flex gap-1.5 mt-2.5">
+                                {content.quiz || content.practiceLab ? (
+                                  <span className="bg-indigo-500/10 text-indigo-500 text-[9px] font-black px-1.5 py-0.5 rounded border border-indigo-500/20 uppercase tracking-tighter">Interactivo</span>
                                 ) : (
                                   <span className="bg-emerald-500/10 text-emerald-500 text-[9px] font-black px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-tighter">Lectura</span>
-                                )}
-                                {content.quiz && (
-                                  <span className="bg-muted text-muted-foreground text-[9px] font-black px-1.5 py-0.5 rounded border border-border uppercase tracking-tighter">Test</span>
                                 )}
                               </div>
                             </td>

@@ -130,15 +130,14 @@ export default function RegisterCompanyPage() {
         
         {/* Cabecera / Logo */}
         <nav className="flex items-center justify-between px-8 lg:px-12 py-8 shrink-0">
-          <Link href="/login" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary shadow-lg shadow-primary/20">
-              <span className="text-primary-foreground text-lg font-extrabold">A</span>
-            </div>
-            <span className="text-foreground text-xl font-extrabold tracking-tight">Atalayas</span>
-          </Link>
-          <Link href="/login" className="text-muted-foreground hover:text-foreground text-sm font-bold transition-colors flex items-center gap-2">
-            <i className="bi bi-arrow-left"></i> Volver al login
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-15 h-15 rounded-xl flex items-center justify-center bg-white shadow-lg shadow-primary/20">
+                <img src="/favicon.ico" alt="Logo" className="w-10 h-10" />
+              </div>
+            </Link>
+            <span className="text-foreground text-xl font-bold tracking-tight">Atalayas EGM</span>
+          </div>
         </nav>
 
         {/* Contenedor Central */}
