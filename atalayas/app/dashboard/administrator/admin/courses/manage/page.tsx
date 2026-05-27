@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/ui/Sidebar";
 import PageHeader from "@/components/ui/pageHeader";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,22 +11,18 @@ export default function ManageCourses() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Estados para filtros
   const [filter, setFilter] = useState<"Todos" | "Onboarding" | "Especialización">("Todos");
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [showRoleFilter, setShowRoleFilter] = useState(false);
 
-  // Estados para Eliminación
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Estados para Edición
   const [courseToEdit, setCourseToEdit] = useState<any | null>(null);
   const [updating, setUpdating] = useState(false);
 
-  // Estados para Roles (para el modal de edición)
   const [availableRolesForEdit, setAvailableRolesForEdit] = useState<string[]>([]);
   const [loadingRolesForEdit, setLoadingRolesForEdit] = useState(false);
 
@@ -64,12 +59,14 @@ export default function ManageCourses() {
         setAvailableRoles(Array.isArray(data) ? data : []);
         setAvailableRolesForEdit(Array.isArray(data) ? data : []);
       } else {
-        console.error("Error cargando roles:", res.status);
+        // Cambiamos console.error por console.warn para evitar el Error Overlay de Next.js
+        console.warn("Aviso cargando roles:", res.status);
         setAvailableRoles(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
         setAvailableRolesForEdit(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
       }
     } catch (err) {
-      console.error("Error cargando roles:", err);
+      // Cambiamos console.error por console.warn
+      console.warn("Aviso cargando roles:", err);
       setAvailableRoles(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
       setAvailableRolesForEdit(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
     } finally {
@@ -105,7 +102,6 @@ export default function ManageCourses() {
 
     try {
       const token = localStorage.getItem("token");
-
       const payload: any = {
         title: courseToEdit.title,
         category: courseToEdit.category,
@@ -234,11 +230,9 @@ export default function ManageCourses() {
         />
 
         <div className="p-6 lg:p-10 flex-1 max-w-7xl mx-auto w-full">
-          <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col">
+          <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col min-h-[400px]">
 
-            {/* Filtros y Buscador Integrados y Unificados */}
             <div className="p-5 border-b border-border flex flex-col lg:flex-row lg:items-center gap-4 bg-muted/10">
-
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex flex-wrap gap-1 bg-card border border-border p-1 rounded-xl shadow-sm">
                   {(["Todos", "Onboarding", "Especialización"] as const).map((tab) => (

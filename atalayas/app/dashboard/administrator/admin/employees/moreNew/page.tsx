@@ -2,10 +2,20 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/ui/Sidebar";
+import { motion, AnimatePresence } from "framer-motion";
 import PageHeader from "@/components/ui/pageHeader";
 import { API_ROUTES } from "@/lib/utils";
 import Papa from "papaparse";
+
+// Variantes para la animación de entrada
+const containerVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.4, ease: "easeOut" } 
+  }
+};
 
 export default function BulkCreatePage() {
     const router = useRouter();
@@ -202,7 +212,6 @@ export default function BulkCreatePage() {
 
     return (
         <div className="flex min-h-screen bg-background font-sans text-foreground">
-
             <main className="flex-1 overflow-auto flex flex-col relative">
                 <PageHeader
                     title="Carga Masiva"
@@ -212,9 +221,11 @@ export default function BulkCreatePage() {
                 />
 
                 <div className="p-6 lg:p-10 w-full max-w-350 mx-auto transition-all animate-in fade-in duration-500">
-
                     {employees.length === 0 ? (
-                        <div className="bg-card rounded-[2rem] border-2 border-dashed border-border p-16 text-center flex flex-col items-center justify-center shadow-sm">
+                        <motion.div 
+                            variants={containerVariants} initial="hidden" animate="visible"
+                            className="bg-card rounded-[2rem] border-2 border-dashed border-border p-16 text-center flex flex-col items-center justify-center shadow-sm"
+                        >
                             <div className="w-20 h-20 bg-primary/10 text-primary rounded-3xl flex items-center justify-center mb-6 border border-primary/20">
                                 <i className="bi bi-cloud-arrow-up-fill text-4xl"></i>
                             </div>
@@ -233,9 +244,12 @@ export default function BulkCreatePage() {
                             >
                                 <i className="bi bi-folder2-open"></i> Seleccionar archivo
                             </label>
-                        </div>
+                        </motion.div>
                     ) : (
-                        <div className="space-y-6">
+                        <motion.div 
+                            variants={containerVariants} initial="hidden" animate="visible"
+                            className="space-y-6"
+                        >
                             <div className="bg-card rounded-[2rem] border border-border shadow-sm overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
@@ -250,125 +264,78 @@ export default function BulkCreatePage() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-border/50">
-                                            {employees.map((emp, i) => {
-                                                const showSuggestions = activeSuggestionIndex === i && suggestions.length > 0;
-
-                                                return (
-                                                    <tr key={i} className={`transition-colors ${emp.status === 'error' ? 'bg-destructive/5' : 'hover:bg-muted/30'}`}>
-                                                        <td className="px-4 py-2">
-                                                            <input
-                                                                className="w-full bg-transparent p-2 text-sm font-bold outline-none focus:text-primary"
-                                                                value={emp.name}
-                                                                onChange={(e) => updateEmployee(i, 'name', e.target.value)}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            <input
-                                                                className="w-full bg-transparent p-2 text-sm font-bold outline-none focus:text-primary"
-                                                                value={emp.email}
-                                                                onChange={(e) => updateEmployee(i, 'email', e.target.value)}
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-2 relative">
-                                                            <div className="relative">
-                                                                <input
-                                                                    ref={el => { inputRefs.current[i] = el; }}
-                                                                    className="w-full bg-transparent p-2 text-sm font-bold outline-none focus:text-primary"
-                                                                    value={emp.jobRole}
-                                                                    onChange={(e) => handleJobRoleChange(i, e.target.value)}
-                                                                    onFocus={() => {
-                                                                        setActiveSuggestionIndex(i);
-                                                                        setSuggestions(filterSuggestions(emp.jobRole));
-                                                                    }}
-                                                                    placeholder="Ej. Técnico, Vendedor..."
-                                                                />
-                                                                {showSuggestions && (
-                                                                    <div
-                                                                        ref={suggestionsRef}
-                                                                        className="absolute z-20 left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto"
-                                                                        style={{ top: '100%' }}
-                                                                    >
-                                                                        {suggestions.map((suggestion, idx) => (
-                                                                            <button
-                                                                                key={idx}
-                                                                                type="button"
-                                                                                onClick={() => selectSuggestion(i, suggestion)}
-                                                                                className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl font-medium"
-                                                                            >
-                                                                                {suggestion}
-                                                                            </button>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
+                                            {employees.map((emp, i) => (
+                                                <tr key={i} className={`transition-colors ${emp.status === 'error' ? 'bg-destructive/5' : 'hover:bg-muted/30'}`}>
+                                                    <td className="px-4 py-2">
+                                                        <input className="w-full bg-transparent p-2 text-sm font-bold outline-none focus:text-primary" value={emp.name} onChange={(e) => updateEmployee(i, 'name', e.target.value)} />
+                                                    </td>
+                                                    <td className="px-4 py-2">
+                                                        <input className="w-full bg-transparent p-2 text-sm font-bold outline-none focus:text-primary" value={emp.email} onChange={(e) => updateEmployee(i, 'email', e.target.value)} />
+                                                    </td>
+                                                    <td className="px-4 py-2 relative">
+                                                        <input
+                                                            className="w-full bg-transparent p-2 text-sm font-bold outline-none focus:text-primary"
+                                                            value={emp.jobRole}
+                                                            onChange={(e) => handleJobRoleChange(i, e.target.value)}
+                                                            onFocus={() => { setActiveSuggestionIndex(i); setSuggestions(filterSuggestions(emp.jobRole)); }}
+                                                            placeholder="Ej. Técnico..."
+                                                        />
+                                                        {activeSuggestionIndex === i && suggestions.length > 0 && (
+                                                            <div ref={suggestionsRef} className="absolute z-20 left-4 right-4 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                                                                {suggestions.map((s, idx) => (
+                                                                    <button key={idx} type="button" onClick={() => selectSuggestion(i, s)} className="w-full text-left px-4 py-2 text-sm hover:bg-muted font-medium">
+                                                                        {s}
+                                                                    </button>
+                                                                ))}
                                                             </div>
-                                                        </td>
-                                                        <td className="px-4 py-2 text-center">
-                                                            <select
-                                                                className="bg-muted px-3 py-1.5 rounded-xl text-[10px] font-black border-none cursor-pointer focus:ring-2 focus:ring-primary/20"
-                                                                value={emp.role}
-                                                                onChange={(e) => updateEmployee(i, 'role', e.target.value)}
-                                                            >
-                                                                <option value="EMPLOYEE">EMPLEADO</option>
-                                                                <option value="ADMIN">ADMIN</option>
-                                                            </select>
-                                                        </td>
-                                                        <td className="px-6 py-2">
-                                                            {emp.status === "completado" ? (
-                                                                <span className="inline-flex items-center gap-1.5 text-green-600 text-[10px] font-black tracking-tighter">
-                                                                    <i className="bi bi-check-circle-fill text-sm"></i> LISTO
-                                                                </span>
-                                                            ) : emp.status === "error" ? (
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-destructive text-[9px] font-black uppercase italic">Error</span>
-                                                                    <span className="text-destructive/80 text-[10px] font-medium leading-none truncate max-w-30">{emp.errorMsg}</span>
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-muted-foreground/40 text-[10px] font-black uppercase italic tracking-tighter">Pendiente</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-6 py-2 text-right">
-                                                            <button
-                                                                onClick={() => removeEmployee(i)}
-                                                                className="w-8 h-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all border-none bg-transparent cursor-pointer"
-                                                            >
-                                                                <i className="bi bi-trash3"></i>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-center">
+                                                        <select className="bg-muted px-3 py-1.5 rounded-xl text-[10px] font-black border-none cursor-pointer" value={emp.role} onChange={(e) => updateEmployee(i, 'role', e.target.value)}>
+                                                            <option value="EMPLOYEE">EMPLEADO</option>
+                                                            <option value="ADMIN">ADMIN</option>
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-6 py-2">
+                                                        {emp.status === "completado" ? (
+                                                            <span className="text-green-600 text-[10px] font-black"><i className="bi bi-check-circle-fill"></i> LISTO</span>
+                                                        ) : emp.status === "error" ? (
+                                                            <span className="text-destructive text-[10px] font-black uppercase">{emp.errorMsg}</span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground/40 text-[10px] font-black uppercase">Pendiente</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-2 text-right">
+                                                        <button onClick={() => removeEmployee(i)} className="w-8 h-8 rounded-lg text-muted-foreground hover:text-destructive transition-all"><i className="bi bi-trash3"></i></button>
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
 
                             {error && (
-                                <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-2xl text-xs font-bold flex items-center gap-3 animate-in slide-in-from-top-2">
+                                <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-2xl text-xs font-bold flex items-center gap-3">
                                     <i className="bi bi-exclamation-triangle-fill text-lg"></i> {error}
                                 </div>
                             )}
 
-                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-card p-6 rounded-[2rem] border border-border">
-                                <button
-                                    onClick={() => setEmployees([])}
-                                    className="text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors bg-transparent border-none cursor-pointer"
-                                >
-                                    <i className="bi bi-x-lg mr-2"></i> Cancelar y limpiar
-                                </button>
-
+                            <div className="flex justify-end gap-4">
+                                <button onClick={() => setEmployees([])} className="text-xs font-black uppercase text-muted-foreground hover:text-destructive px-6 py-4">Cancelar</button>
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={loading || employees.every(e => e.status === 'completado')}
-                                    className="w-full sm:w-auto bg-secondary text-secondary-foreground px-12 py-4 rounded-2xl font-black text-sm shadow-xl shadow-secondary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-3 border-none cursor-pointer"
+                                    disabled={loading}
+                                    className="bg-secondary text-secondary-foreground px-12 py-4 rounded-2xl font-black text-sm shadow-xl shadow-secondary/20 hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-3"
                                 >
                                     {loading ? (
-                                        <><i className="bi bi-arrow-repeat animate-spin text-lg"></i> Procesando...</>
+                                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                                     ) : (
-                                        <><i className="bi bi-cloud-check-fill text-lg"></i> Procesar {employees.filter(e => e.status !== 'completado').length} registros</>
+                                        <><i className="bi bi-cloud-check-fill text-lg"></i> Procesar {employees.length} registros</>
                                     )}
                                 </button>
                             </div>
-                        </div>
+                        </motion.div>
                     )}
                 </div>
             </main>

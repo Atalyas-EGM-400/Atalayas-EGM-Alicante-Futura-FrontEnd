@@ -27,6 +27,8 @@ interface StatsData {
     totalDocuments: number;
     totalServices: number;
     pendingRequests: number;
+    inactiveUsers?: number; // Para el contador de bajas
+    inactiveCompanies?: number; // Para el contador de bajas
   };
   recent: {
     users: Array<{ id: string; name: string; email: string; role: string; createdAt: string; avatarUrl?: string; Company?: { name: string } }>;
@@ -736,7 +738,7 @@ export default function RealTimeStatsPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const { onlineUsers } = useSocket();
+  const { onlineUsers, companyOnlineUsers } = useSocket();
 
   useEffect(() => {
     const saved = localStorage.getItem('user');
@@ -753,19 +755,21 @@ export default function RealTimeStatsPage() {
   const ov = stats?.overview;
   const role = currentUser?.role ?? 'GENERAL_ADMIN';
   
-  // Tendencias de Altas
-  const userTrend = groupByMonth(stats?.trends.usersByMonth ?? []);
-  const companyTrend = groupByMonth(stats?.trends.companiesByMonth ?? []);
+  const displayOnlineUsers = currentUser?.role === 'GENERAL_ADMIN' ? onlineUsers : companyOnlineUsers;
   
-  // ── NUEVO: Tendencias de Bajas (Desvinculaciones) ──
+  const userTrend = groupByMonth(stats?.trends?.usersByMonth ?? []);
+  const companyTrend = groupByMonth(stats?.trends?.companiesByMonth ?? []);
+  
   const userDeparturesData = stats?.workforce?.userDepartures ?? [];
   const companyDeparturesData = stats?.workforce?.companyDepartures ?? [];
   const userDepartureTrend = groupByMonth(userDeparturesData);
   const companyDepartureTrend = groupByMonth(companyDeparturesData);
-  const totalUserDepartures = userDeparturesData.length;
-  const totalCompanyDepartures = companyDeparturesData.length;
+  
+  // SOLUCIÓN AL CONTADOR DE BAJAS: Lee de inactiveUsers o de la longitud del array si está vacío
+  const totalUserDepartures = ov?.inactiveUsers ?? userDeparturesData.length;
+  const totalCompanyDepartures = ov?.inactiveCompanies ?? companyDeparturesData.length;
 
-  const maxEnrollments = Math.max(...(stats?.top.courses.map(c => c._count.Enrollment) ?? [1]), 1);
+  const maxEnrollments = Math.max(...(stats?.top?.courses?.map(c => c._count.Enrollment) ?? [1]), 1);
 
   return (
     <div className="flex h-screen bg-background font-sans text-foreground overflow-hidden">
@@ -824,9 +828,9 @@ export default function RealTimeStatsPage() {
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-500 mb-0.5">Live Activity</p>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-semibold tabular-nums tracking-tighter">{onlineUsers}</span>
+                      <span className="text-4xl font-semibold tabular-nums tracking-tighter">{displayOnlineUsers}</span>
                       <span className="text-sm text-muted-foreground">
-                        {onlineUsers === 1 ? 'usuario conectado' : 'usuarios conectados'} ahora mismo
+                        {displayOnlineUsers === 1 ? 'usuario conectado' : 'usuarios conectados'} ahora mismo
                       </span>
                     </div>
                   </div>
@@ -873,13 +877,13 @@ export default function RealTimeStatsPage() {
                         Balance entre altas de empresas y registros de nuevos usuarios.
                       </p>
                       <CombinedYearlyHistorySelector 
-                        users={stats?.trends.usersByMonth || []} 
-                        companies={stats?.trends.companiesByMonth || []} 
+                        users={stats?.trends?.usersByMonth || []} 
+                        companies={stats?.trends?.companiesByMonth || []} 
                         title="Crecimiento global de Atalayas"
                       />
                     </div>
                     <div className="lg:col-span-2 bg-muted/20 p-5 rounded-2xl border border-border/40">
-                      <AdditionsChart users={stats?.trends.usersByMonth || []} companies={stats?.trends.companiesByMonth || []} />
+                      <AdditionsChart users={stats?.trends?.usersByMonth || []} companies={stats?.trends?.companiesByMonth || []} />
                     </div>
                   </div>
 
@@ -900,7 +904,7 @@ export default function RealTimeStatsPage() {
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Usuarios / mes</p>
-                        <YearlyHistorySelector data={stats?.trends.usersByMonth || []} title="Altas de Usuarios" theme="blue" />
+                        <YearlyHistorySelector data={stats?.trends?.usersByMonth || []} title="Altas de Usuarios" theme="blue" />
                       </div>
                       <MiniLineChart data={userTrend} theme="blue" />
                     </div>
@@ -908,7 +912,7 @@ export default function RealTimeStatsPage() {
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Empresas / mes</p>
-                        <YearlyHistorySelector data={stats?.trends.companiesByMonth || []} title="Altas de Empresas" theme="violet" />
+                        <YearlyHistorySelector data={stats?.trends?.companiesByMonth || []} title="Altas de Empresas" theme="violet" />
                       </div>
                       <MiniLineChart data={companyTrend} theme="violet" />
                     </div>
@@ -999,7 +1003,7 @@ export default function RealTimeStatsPage() {
                   <div className="flex flex-col gap-3">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Top cursos por matrículas</p>
                     <div className="space-y-2">
-                      {stats?.top.courses.slice(0, 5).map((c, i) => (
+                      {stats?.top?.courses?.slice(0, 5).map((c, i) => (
                         <div key={c.id} className="flex items-center gap-2">
                           <span className="text-[10px] font-semibold text-muted-foreground w-4 text-right">{i + 1}</span>
                           <div className="flex-1 min-w-0">
@@ -1029,7 +1033,7 @@ export default function RealTimeStatsPage() {
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Últimos registros</p>
                     <div className="space-y-2">
-                      {stats?.recent.users.map((u) => (
+                      {stats?.recent?.users?.map((u) => (
                         <div key={u.id} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden border border-border/50">
                             {u.avatarUrl
@@ -1055,7 +1059,7 @@ export default function RealTimeStatsPage() {
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-3">Últimos cursos creados</p>
                     <div className="space-y-2">
-                      {stats?.recent.courses.map((c) => (
+                      {stats?.recent?.courses?.map((c) => (
                         <div key={c.id} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
                           <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0 border border-amber-500/20">
                             <i className="bi bi-journal-bookmark-fill text-amber-400 text-xs"></i>

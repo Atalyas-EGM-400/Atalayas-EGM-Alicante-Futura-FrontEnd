@@ -2,9 +2,19 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/ui/Sidebar";
+import { motion, AnimatePresence } from "framer-motion";
 import PageHeader from "@/components/ui/pageHeader";
 import { API_ROUTES } from "@/lib/utils";
+
+// Variantes para la animación de entrada
+const containerVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: 0.4, ease: "easeOut" } 
+  }
+};
 
 export default function NewEmployeePage() {
   const router = useRouter();
@@ -22,7 +32,7 @@ export default function NewEmployeePage() {
   const jobRoleInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Estado del formulario unificado (sin password)
+  // Estado del formulario unificado
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -57,17 +67,16 @@ export default function NewEmployeePage() {
     fetchJobRoles();
   }, []);
 
-  // Filtrar sugerencias basadas en el texto ingresado
+  // Filtrar sugerencias (MOSTRAR TODO SI ESTÁ VACÍO)
   useEffect(() => {
     if (form.jobRole.trim() === "") {
-      setFilteredJobRoles([]);
-      return;
+      setFilteredJobRoles(availableJobRoles); // <-- CAMBIO: Muestra todos si está vacío
+    } else {
+      const filtered = availableJobRoles.filter(role =>
+        role.toLowerCase().includes(form.jobRole.toLowerCase())
+      );
+      setFilteredJobRoles(filtered);
     }
-
-    const filtered = availableJobRoles.filter(role =>
-      role.toLowerCase().includes(form.jobRole.toLowerCase())
-    );
-    setFilteredJobRoles(filtered);
   }, [form.jobRole, availableJobRoles]);
 
   // Cerrar sugerencias al hacer clic fuera
@@ -114,8 +123,6 @@ export default function NewEmployeePage() {
 
     try {
       const token = localStorage.getItem("token");
-
-      // Generar contraseña aleatoria
       const randomPassword = generateRandomPassword();
 
       const payload = {
@@ -146,8 +153,7 @@ export default function NewEmployeePage() {
   if (!currentUser) return null;
 
   return (
-    <div className="flex min-h-screen bg-background font-sans">
-
+    <div className="flex min-h-screen bg-[#f5f5f7] dark:bg-[#0d0d0f] font-sans">
       <main className="flex-1 overflow-auto flex flex-col relative">
         <PageHeader
           title="Nuevo Empleado"
@@ -157,14 +163,25 @@ export default function NewEmployeePage() {
         />
 
         <div className="p-6 lg:p-10 max-w-3xl mx-auto w-full">
-          <div className="bg-card rounded-[2rem] shadow-sm border border-border p-8 lg:p-10 transition-all">
-
+          <motion.div 
+            variants={containerVariants} 
+            initial="hidden" 
+            animate="visible"
+            className="bg-card rounded-[2rem] shadow-sm border border-border p-8 lg:p-10 transition-all"
+          >
             {/* Mensaje de Error */}
-            {error && (
-              <div className="p-4 mb-8 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive font-bold text-xs flex items-center gap-2 animate-in fade-in">
-                <i className="bi bi-exclamation-octagon-fill text-sm"></i> {error}
-              </div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }} 
+                  animate={{ opacity: 1, height: 'auto' }} 
+                  exit={{ opacity: 0, height: 0 }}
+                  className="p-4 mb-8 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive font-bold text-xs flex items-center gap-2"
+                >
+                  <i className="bi bi-exclamation-octagon-fill text-sm"></i> {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Mensaje informativo sobre la contraseña */}
             <div className="p-4 mb-8 bg-primary/5 border border-primary/20 rounded-xl text-primary text-xs flex items-center gap-2">
@@ -173,7 +190,6 @@ export default function NewEmployeePage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-10">
-
               {/* Encabezado de Sección */}
               <div className="flex items-center gap-4 pb-2 border-b border-border/50">
                 <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center text-lg shrink-0 border border-primary/20">
@@ -237,26 +253,31 @@ export default function NewEmployeePage() {
                   />
 
                   {/* Sugerencias de puestos */}
-                  {showJobRoleSuggestions && filteredJobRoles.length > 0 && (
-                    <div
-                      ref={suggestionsRef}
-                      className="absolute z-10 left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto"
-                    >
-                      {filteredJobRoles.map((role, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => {
-                            setForm({ ...form, jobRole: role });
-                            setShowJobRoleSuggestions(false);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl font-medium"
-                        >
-                          {role}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {showJobRoleSuggestions && filteredJobRoles.length > 0 && (
+                      <motion.div
+                        ref={suggestionsRef}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        className="absolute z-10 left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto"
+                      >
+                        {filteredJobRoles.map((role, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => {
+                              setForm({ ...form, jobRole: role });
+                              setShowJobRoleSuggestions(false);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl font-medium"
+                          >
+                            {role}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   <p className="text-[9px] text-muted-foreground ml-1">
                     Puedes seleccionar un puesto existente o escribir uno nuevo
@@ -294,7 +315,7 @@ export default function NewEmployeePage() {
                   className="px-8 py-3 bg-secondary text-secondary-foreground rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-secondary/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading ? (
-                    <><i className="bi bi-arrow-repeat animate-spin"></i> Creando...</>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   ) : (
                     'Crear Empleado'
                   )}
@@ -302,7 +323,7 @@ export default function NewEmployeePage() {
               </div>
 
             </form>
-          </div>
+          </motion.div>
         </div>
       </main>
     </div>
