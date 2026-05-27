@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/ui/Sidebar';
 import PageHeader from '@/components/ui/pageHeader';
 import SearchInput from '@/components/ui/Searchbar';
 import { API_ROUTES, fetchWithApiFallback } from '@/lib/utils';
@@ -17,26 +16,6 @@ interface Announcement {
   createdAt: string;
   imageUrl?: string | null;
   Company?: { id: string; name: string } | null;
-}
-
-// --- Componente: Skeleton para el Loading ---
-function AnnouncementSkeleton() {
-  return (
-    <div className="bg-white dark:bg-[#1c1c1e] rounded-[2.5rem] border border-gray-100 dark:border-white/5 overflow-hidden shadow-sm animate-pulse flex flex-col">
-      <div className="h-40 bg-gray-200 dark:bg-zinc-800" />
-      <div className="p-6 space-y-4">
-        <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded-full w-3/4" />
-        <div className="space-y-2">
-          <div className="h-3 bg-gray-100 dark:bg-zinc-800/50 rounded-full w-full" />
-          <div className="h-3 bg-gray-100 dark:bg-zinc-800/50 rounded-full w-5/6" />
-        </div>
-        <div className="pt-4 border-t border-gray-50 dark:border-white/5 flex justify-between">
-          <div className="h-3 bg-gray-100 dark:bg-zinc-800/50 rounded-full w-20" />
-          <div className="h-3 bg-gray-100 dark:bg-zinc-800/50 rounded-full w-4" />
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // --- Componente: Carrusel Premium ---
@@ -82,7 +61,7 @@ function AnnouncementCarousel({
         </h2>
       </div>
 
-      <div className="relative p-[1.5px] rounded-[3.5rem] transition-all duration-500 bg-gradient-to-r from-orange-500 to-blue-500 shadow-2xl group">
+      <div className="relative p-[1.5px] rounded-[3.5rem] transition-all duration-500 bg-linear-to-r from-orange-500 to-blue-500 shadow-2xl group">
         <div
           onClick={() => router.push(`/dashboard/administrator/admin/announcements/${actualAnuncio.id}`)}
           className="relative block w-full aspect-video md:aspect-21/9 lg:aspect-25/8 rounded-[calc(3.5rem-1.5px)] overflow-hidden bg-zinc-900 cursor-pointer"
@@ -450,56 +429,43 @@ export default function AnnouncementsPage() {
                 />
               </div>
 
-              <button
-                onClick={() =>
-                  router.push(
-                    `/dashboard/administrator/admin/announcements/new`
-                  )
-                }
-                className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm w-full"
+              <button 
+                onClick={() => router.push(`/dashboard/administrator/admin/announcements/new`)}
+                className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm h-10 px-5 shrink-0"
+                title="Crear Nuevo"
               >
-                Crear Nuevo
+                <i className="bi bi-plus-lg text-lg sm:text-base"></i>
+                <span className="hidden sm:inline whitespace-nowrap">
+                  Crear Nuevo
+                </span>
               </button>
             </div>
           }
         />
-      </div>
-
-      {/* Botón: Adaptativo y consistente */}
-      <button 
-        onClick={() => router.push(`/dashboard/administrator/admin/announcements/new`)}
-        className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm w-10 h-10 sm:w-auto sm:h-auto sm:px-5 sm:py-2.5 shrink-0"
-        title="Crear Nuevo"
-      >
-        <i className="bi bi-plus-lg text-lg sm:text-base"></i>
-        <span className="hidden sm:inline whitespace-nowrap">
-          Crear Nuevo
-        </span>
-      </button>
-    </div>
-  }
-/>
 
         <div className="flex-1 overflow-y-auto p-6 lg:p-10 no-scrollbar">
           <div className="max-w-7xl mx-auto space-y-12">
-
-            {/* LOADING CON CÍRCULO */}
-            <AnimatePresence mode="wait">
+            
+            {/* SOLUCIÓN: Cambiado a mode="popLayout" */}
+            <AnimatePresence mode="popLayout">
               {loading ? (
                 <motion.div
                   key="loader"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="flex justify-center py-32"
+                  className="flex justify-center py-32 w-full"
                 >
                   <div className="animate-spin rounded-full h-14 w-14 border-t-2 border-primary"></div>
                 </motion.div>
               ) : (
                 <motion.div
                   key="content"
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  className="w-full"
                 >
                   {!searchQuery && currentPage === 1 && announcements.length > 0 && (
                     <AnnouncementCarousel
@@ -520,107 +486,84 @@ export default function AnnouncementsPage() {
                       </p>
                     </div>
 
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        layout
-                        key={currentPage + searchQuery}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                      >
-                        {currentItems.map((ann) => (
-                          <motion.div
-                            key={ann.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4 }}
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/administrator/admin/announcements/${ann.id}`
-                              )
-                            }
-                            className="group bg-white dark:bg-[#1c1c1e] rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm hover:shadow-2xl transition-all cursor-pointer overflow-hidden flex flex-col"
-                          >
-                            <div className="h-48 relative bg-gray-200 dark:bg-neutral-800 overflow-hidden">
-                              <img
-                                src={
-                                  ann.imageUrl ||
-                                  'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop'
-                                }
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                alt={ann.title}
-                              />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {currentItems.map((ann) => (
+                        <div
+                          key={ann.id}
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/administrator/admin/announcements/${ann.id}`
+                            )
+                          }
+                          className="group bg-white dark:bg-[#1c1c1e] rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-sm hover:shadow-2xl transition-all cursor-pointer overflow-hidden flex flex-col"
+                        >
+                          <div className="h-48 relative bg-gray-200 dark:bg-neutral-800 overflow-hidden">
+                            <img
+                              src={
+                                ann.imageUrl ||
+                                'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop'
+                              }
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                              alt={ann.title}
+                            />
 
-                              {!ann.isPublic && (
-                                <div className="absolute top-4 right-4 flex gap-2">
-                                  <button
-                                    onClick={(e) =>
-                                      handleEdit(e, ann)
-                                    }
-                                    className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary transition-colors shadow-lg"
-                                  >
-                                    <i className="bi bi-pencil-fill text-[10px]" />
-                                  </button>
-
-                                  <button
-                                    onClick={(e) =>
-                                      handleDelete(e, ann.id)
-                                    }
-                                    className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center hover:bg-red-500 transition-colors shadow-lg"
-                                  >
-                                    <i className="bi bi-trash3 text-[10px]" />
-                                  </button>
-                                </div>
-                              )}
-
-                              <div className="absolute bottom-4 left-4">
-                                <span
-                                  className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter backdrop-blur-md text-white border border-white/20 ${
-                                    ann.isPublic
-                                      ? 'bg-blue-500/40'
-                                      : 'bg-purple-500/40'
-                                  }`}
+                            {!ann.isPublic && (
+                              <div className="absolute top-4 right-4 flex gap-2">
+                                <button
+                                  onClick={(e) => handleEdit(e, ann)}
+                                  className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center hover:bg-primary transition-colors shadow-lg"
                                 >
-                                  {ann.isPublic
-                                    ? 'Global'
-                                    : ann.Company?.name}
-                                </span>
+                                  <i className="bi bi-pencil-fill text-[10px]" />
+                                </button>
+
+                                <button
+                                  onClick={(e) => handleDelete(e, ann.id)}
+                                  className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center hover:bg-red-500 transition-colors shadow-lg"
+                                >
+                                  <i className="bi bi-trash3 text-[10px]" />
+                                </button>
                               </div>
+                            )}
+
+                            <div className="absolute bottom-4 left-4">
+                              <span
+                                className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter backdrop-blur-md text-white border border-white/20 ${
+                                  ann.isPublic
+                                    ? 'bg-blue-500/40'
+                                    : 'bg-purple-500/40'
+                                }`}
+                              >
+                                {ann.isPublic
+                                  ? 'Global'
+                                  : ann.Company?.name}
+                              </span>
                             </div>
+                          </div>
 
-                            <div className="p-6">
-                              <h4 className="font-bold text-base mb-2 group-hover:text-primary transition-colors line-clamp-1">
-                                {ann.title}
-                              </h4>
+                          <div className="p-6">
+                            <h4 className="font-bold text-base mb-2 group-hover:text-primary transition-colors line-clamp-1">
+                              {ann.title}
+                            </h4>
 
-                              <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed mb-4">
-                                {ann.content}
-                              </p>
+                            <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed mb-4">
+                              {ann.content}
+                            </p>
 
-                              <div className="pt-4 border-t border-gray-50 dark:border-white/5 flex justify-between items-center text-[10px] font-bold text-muted-foreground/40">
-                                <span>
-                                  {new Date(
-                                    ann.createdAt
-                                  ).toLocaleDateString()}
-                                </span>
-
-                                <i className="bi bi-arrow-right text-primary opacity-0 group-hover:opacity-100 transition-all" />
-                              </div>
+                            <div className="pt-4 border-t border-gray-50 dark:border-white/5 flex justify-between items-center text-[10px] font-bold text-muted-foreground/40">
+                              <span>
+                                {new Date(ann.createdAt).toLocaleDateString()}
+                              </span>
+                              <i className="bi bi-arrow-right text-primary opacity-0 group-hover:opacity-100 transition-all" />
                             </div>
-                          </motion.div>
-                        ))}
-                      </motion.div>
-                    </AnimatePresence>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
 
                     {totalPages > 1 && (
                       <div className="flex justify-center items-center gap-2 pt-6">
                         <button
-                          onClick={() =>
-                            setCurrentPage(p =>
-                              Math.max(p - 1, 1)
-                            )
-                          }
+                          onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
                           disabled={currentPage === 1}
                           className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-900 border border-gray-100 flex items-center justify-center disabled:opacity-20 transition-all hover:border-primary"
                         >
@@ -631,9 +574,7 @@ export default function AnnouncementsPage() {
                           {[...Array(totalPages)].map((_, i) => (
                             <button
                               key={i}
-                              onClick={() =>
-                                setCurrentPage(i + 1)
-                              }
+                              onClick={() => setCurrentPage(i + 1)}
                               className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${
                                 currentPage === i + 1
                                   ? 'bg-primary text-white'
@@ -646,14 +587,8 @@ export default function AnnouncementsPage() {
                         </div>
 
                         <button
-                          onClick={() =>
-                            setCurrentPage(p =>
-                              Math.min(p + 1, totalPages)
-                            )
-                          }
-                          disabled={
-                            currentPage === totalPages
-                          }
+                          onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                          disabled={currentPage === totalPages}
                           className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-900 border border-gray-100 flex items-center justify-center disabled:opacity-20 transition-all hover:border-primary"
                         >
                           <i className="bi bi-chevron-right" />

@@ -512,7 +512,7 @@ export default function AdminContentDetail() {
                         {/* Mostrar imagen con manejo de errores */}
                        {content?.imageUrl && (
                           <div className="relative group cursor-zoom-in">
-                            <img ref={imageRef} src={content.imageUrl} className="w-full aspect-[4/3] md:aspect-[16/10] object-cover object-center rounded-[1.5rem] md:rounded-[2rem] shadow-lg border border-border/50 transition-transform duration-500 hover:scale-[1.01]" alt="Cover" onError={() => setImageError(true)} />
+                            <img ref={imageRef} src={content.imageUrl} className="w-full aspect-4/3 md:aspect-16/10 object-cover object-center rounded-[1.5rem] md:rounded-[2rem] shadow-lg border border-border/50 transition-transform duration-500 hover:scale-[1.01]" alt="Cover" onError={() => setImageError(true)} />
                             <div className="absolute top-4 right-4 bg-black/20 backdrop-blur-md p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                               <i className="bi bi-zoom-in text-white"></i>
                             </div>

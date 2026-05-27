@@ -2,12 +2,19 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import PageHeader from "@/components/ui/pageHeader";
 import { API_ROUTES } from "@/lib/utils";
 
-// Variantes para la animación de entrada
-const containerVariants = {
+interface CurrentUser {
+  id: string;
+  name: string;
+  role: string;
+  companyId?: string;
+}
+
+// Tipado explícito de variantes para Framer Motion
+const containerVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   visible: { 
     opacity: 1, 
@@ -22,7 +29,7 @@ export default function NewEmployeePage() {
   // Estados de UI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   // Estados para autocompletado de puestos
   const [availableJobRoles, setAvailableJobRoles] = useState<string[]>([]);
@@ -70,7 +77,7 @@ export default function NewEmployeePage() {
   // Filtrar sugerencias (MOSTRAR TODO SI ESTÁ VACÍO)
   useEffect(() => {
     if (form.jobRole.trim() === "") {
-      setFilteredJobRoles(availableJobRoles); // <-- CAMBIO: Muestra todos si está vacío
+      setFilteredJobRoles(availableJobRoles);
     } else {
       const filtered = availableJobRoles.filter(role =>
         role.toLowerCase().includes(form.jobRole.toLowerCase())
@@ -260,7 +267,7 @@ export default function NewEmployeePage() {
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 5 }}
-                        className="absolute z-10 left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto"
+                        className="absolute z-10 left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto custom-scrollbar"
                       >
                         {filteredJobRoles.map((role, index) => (
                           <button
@@ -270,7 +277,7 @@ export default function NewEmployeePage() {
                               setForm({ ...form, jobRole: role });
                               setShowJobRoleSuggestions(false);
                             }}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl font-medium"
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl last:rounded-b-xl font-medium block text-foreground"
                           >
                             {role}
                           </button>
