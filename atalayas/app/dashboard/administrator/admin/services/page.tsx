@@ -16,28 +16,31 @@ interface Service {
   Company?: { id: string; name: string };
 }
 
-// Variantes estandarizadas de la aplicación
+// Tipo explícito para los estados de filtrado del catálogo
+type FilterType = 'ALL' | 'PUBLIC' | 'COMPANY';
+
+// Variantes estandarizadas de la aplicación con aserción constante para TS
 const pageVariants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-};
+} as const;
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } },
-};
+} as const;
 
 const rowVariants = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' } },
   exit: { opacity: 0, x: -10, transition: { duration: 0.15 } }
-};
+} as const;
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'ALL' | 'PUBLIC' | 'COMPANY'>('COMPANY');
+  const [filter, setFilter] = useState<FilterType>('COMPANY');
   const router = useRouter();
 
   useEffect(() => {
@@ -50,6 +53,7 @@ export default function ServicesPage() {
         const data = await res.json();
         setServices(Array.isArray(data) ? data : []);
       } catch (err) {
+        console.error("Error al recuperar los servicios:", err);
         setServices([]);
       } finally {
         setLoading(false);
@@ -92,15 +96,15 @@ export default function ServicesPage() {
         </motion.div>
 
         <motion.div className="p-4 sm:p-6 lg:p-10 flex-1 max-w-7xl mx-auto w-full" variants={sectionVariants}>
-          <motion.div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col min-h-[400px]" variants={sectionVariants}>
+          <motion.div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col min-h-100" variants={sectionVariants}>
             <div className="p-4 sm:p-5 border-b border-border flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-muted/10">
               
               <div className="flex flex-wrap gap-1 bg-card border border-border p-1 rounded-xl shadow-sm">
-                {['ALL', 'COMPANY', 'PUBLIC'].map((type) => (
+                {(['ALL', 'COMPANY', 'PUBLIC'] as FilterType[]).map((type) => (
                   <button 
                     key={type} 
                     type="button" 
-                    onClick={() => setFilter(type as any)} 
+                    onClick={() => setFilter(type)} 
                     className={`relative px-4 py-2 text-[11px] font-bold rounded-lg transition-colors ${filter === type ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     <span className="relative z-10">
@@ -127,7 +131,6 @@ export default function ServicesPage() {
 
             <div className="w-full">
               {loading ? (
-                // Círculo de carga moderno unificado
                 <div className="flex justify-center py-20">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary" />
                 </div>
@@ -166,7 +169,7 @@ export default function ServicesPage() {
                           </motion.tr>
                         ))
                       ) : (
-                        <motion.tr variants={rowVariants} initial="hidden" animate="show">
+                        <motion.tr variants={rowVariants} initial="hidden" animate="show" key="empty-row">
                           <td colSpan={3} className="py-20 text-center text-muted-foreground">
                             <i className="bi bi-inbox text-3xl mb-3 block opacity-50"></i>
                             <p className="text-sm font-bold uppercase tracking-widest">No se encontraron servicios</p>

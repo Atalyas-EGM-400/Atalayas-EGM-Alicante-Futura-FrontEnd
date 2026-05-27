@@ -7,7 +7,18 @@ import PageHeader from "@/components/ui/pageHeader";
 import { API_ROUTES } from "@/lib/utils";
 import Papa from "papaparse";
 
-// Variantes para la animación de entrada
+// Estructura de datos tipada para cada empleado procesado desde el CSV
+interface CSVEmployee {
+    name: string;
+    email: string;
+    role: "EMPLOYEE" | "ADMIN";
+    jobRole: string;
+    password: string;
+    status: "pendiente" | "completado" | "error";
+    errorMsg: string;
+}
+
+// Solución: Se añade 'as const' para fijar el string de la transición a un tipo literal
 const containerVariants = {
   hidden: { opacity: 0, y: 10 },
   visible: { 
@@ -15,11 +26,11 @@ const containerVariants = {
     y: 0, 
     transition: { duration: 0.4, ease: "easeOut" } 
   }
-};
+} as const;
 
 export default function BulkCreatePage() {
     const router = useRouter();
-    const [employees, setEmployees] = useState<any[]>([]);
+    const [employees, setEmployees] = useState<CSVEmployee[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -28,7 +39,6 @@ export default function BulkCreatePage() {
     const [availableJobRoles, setAvailableJobRoles] = useState<string[]>([]);
     const [activeSuggestionIndex, setActiveSuggestionIndex] = useState<number | null>(null);
     const [suggestions, setSuggestions] = useState<string[]>([]);
-    const inputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
     const suggestionsRef = useRef<HTMLDivElement | null>(null);
 
     // Cargar roles existentes
@@ -114,7 +124,7 @@ export default function BulkCreatePage() {
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
-                const parsedData = results.data.map((row: any) => {
+                const parsedData: CSVEmployee[] = results.data.map((row: any) => {
                     const rawRole = (row.rol || row.role || "").trim().toUpperCase();
                     const finalRole = rawRole.includes("ADMIN") ? "ADMIN" : "EMPLOYEE";
 
@@ -135,7 +145,7 @@ export default function BulkCreatePage() {
         });
     };
 
-    const updateEmployee = (index: number, field: string, value: string) => {
+    const updateEmployee = (index: number, field: keyof CSVEmployee, value: string) => {
         const updated = [...employees];
         updated[index] = { ...updated[index], [field]: value };
         setEmployees(updated);
@@ -147,6 +157,11 @@ export default function BulkCreatePage() {
 
     const handleSubmit = async () => {
         if (employees.length === 0) return;
+        if (!currentUser?.companyId) {
+            setError("No se pudo identificar la empresa del administrador actual.");
+            return;
+        }
+
         setLoading(true);
         setError("");
 
@@ -250,8 +265,8 @@ export default function BulkCreatePage() {
                             variants={containerVariants} initial="hidden" animate="visible"
                             className="space-y-6"
                         >
-                            <div className="bg-card rounded-[2rem] border border-border shadow-sm overflow-hidden">
-                                <div className="overflow-x-auto">
+                            <div className="bg-card rounded-[2rem] border border-border shadow-sm overflow-visible">
+                                <div className="overflow-x-auto overflow-y-visible">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-muted/50 border-b border-border">
@@ -272,7 +287,7 @@ export default function BulkCreatePage() {
                                                     <td className="px-4 py-2">
                                                         <input className="w-full bg-transparent p-2 text-sm font-bold outline-none focus:text-primary" value={emp.email} onChange={(e) => updateEmployee(i, 'email', e.target.value)} />
                                                     </td>
-                                                    <td className="px-4 py-2 relative">
+                                                    <td className="px-4 py-2 relative overflow-visible">
                                                         <input
                                                             className="w-full bg-transparent p-2 text-sm font-bold outline-none focus:text-primary"
                                                             value={emp.jobRole}
@@ -281,9 +296,9 @@ export default function BulkCreatePage() {
                                                             placeholder="Ej. Técnico..."
                                                         />
                                                         {activeSuggestionIndex === i && suggestions.length > 0 && (
-                                                            <div ref={suggestionsRef} className="absolute z-20 left-4 right-4 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                                                            <div ref={suggestionsRef} className="absolute z-30 left-4 right-4 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
                                                                 {suggestions.map((s, idx) => (
-                                                                    <button key={idx} type="button" onClick={() => selectSuggestion(i, s)} className="w-full text-left px-4 py-2 text-sm hover:bg-muted font-medium">
+                                                                    <button key={idx} type="button" onClick={() => selectSuggestion(i, s)} className="w-full text-left px-4 py-2 text-sm hover:bg-muted font-medium text-foreground">
                                                                         {s}
                                                                     </button>
                                                                 ))}
@@ -291,7 +306,7 @@ export default function BulkCreatePage() {
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-2 text-center">
-                                                        <select className="bg-muted px-3 py-1.5 rounded-xl text-[10px] font-black border-none cursor-pointer" value={emp.role} onChange={(e) => updateEmployee(i, 'role', e.target.value)}>
+                                                        <select className="bg-muted px-3 py-1.5 rounded-xl text-[10px] font-black border-none cursor-pointer text-foreground" value={emp.role} onChange={(e) => updateEmployee(i, 'role', e.target.value)}>
                                                             <option value="EMPLOYEE">EMPLEADO</option>
                                                             <option value="ADMIN">ADMIN</option>
                                                         </select>
