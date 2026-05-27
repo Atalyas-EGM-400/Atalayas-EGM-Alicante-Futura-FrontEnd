@@ -7,10 +7,11 @@ import PageHeader from "@/components/ui/pageHeader";
 import { API_ROUTES } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Se añade 'as const' para que TypeScript infiera "easeOut" como un tipo literal exacto
 const sectionVariants = {
   hidden: { opacity: 0, y: 14 },
   show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } }
-};
+} as const;
 
 export default function NewCoursePage() {
   const router = useRouter();
@@ -71,20 +72,21 @@ export default function NewCoursePage() {
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!formData.title.trim()) {
-      alert("El título es obligatorio");
-      return;
-    }
+  if (!formData.title.trim()) {
+    alert("El título es obligatorio");
+    return;
+  }
 
-    if (formData.category === "ESPECIALIZADO" && !formData.requiredRole) {
-      alert("Para cursos de especialización, debes seleccionar un rol requerido");
-      return;
-    }
+  if (formData.category === "ESPECIALIZADO" && !formData.requiredRole) {
+    alert("Para cursos de especialización, debes seleccionar un rol requerido");
+    return;
+  }
 
-    setLoading(true);
-    setLoadingStep("Iniciando creación...");
+  //  Cambia 'loading(true)' por 'setLoading(true)'
+  setLoading(true); 
+  setLoadingStep("Iniciando creación...");
 
     try {
       const token = localStorage.getItem("token");
@@ -156,9 +158,9 @@ export default function NewCoursePage() {
             className="bg-card p-8 lg:p-10 rounded-[2.5rem] border border-border shadow-sm space-y-8"
           >
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+              <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1 block">
                 Imagen de portada
-              </label>
+              </span>
               <label className="relative h-40 w-full border-2 border-dashed rounded-2xl flex items-center justify-center transition-all cursor-pointer group overflow-hidden bg-muted/20 hover:border-primary">
                 <input
                   type="file"
@@ -202,10 +204,11 @@ export default function NewCoursePage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+              <label htmlFor="course-title" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1 block">
                 Nombre del curso
               </label>
               <input
+                id="course-title"
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -254,10 +257,11 @@ export default function NewCoursePage() {
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   className="space-y-2"
                 >
-                  <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  <label htmlFor="required-role" className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1 block">
                     Rol Requerido
                   </label>
                   <select
+                    id="required-role"
                     value={formData.requiredRole}
                     onChange={(e) => setFormData({ ...formData, requiredRole: e.target.value })}
                     className="w-full px-6 py-4 rounded-2xl bg-background border border-input focus:border-primary focus:ring-1 focus:ring-primary outline-none font-bold transition-all appearance-none cursor-pointer"
