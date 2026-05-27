@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "@/components/ui/Sidebar";
 import PageHeader from "@/components/ui/pageHeader";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,22 +11,18 @@ export default function ManageCourses() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Estados para filtros
   const [filter, setFilter] = useState<"Todos" | "Onboarding" | "Especialización">("Todos");
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [showRoleFilter, setShowRoleFilter] = useState(false);
 
-  // Estados para Eliminación
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Estados para Edición
   const [courseToEdit, setCourseToEdit] = useState<any | null>(null);
   const [updating, setUpdating] = useState(false);
 
-  // Estados para Roles (para el modal de edición)
   const [availableRolesForEdit, setAvailableRolesForEdit] = useState<string[]>([]);
   const [loadingRolesForEdit, setLoadingRolesForEdit] = useState(false);
 
@@ -64,12 +59,14 @@ export default function ManageCourses() {
         setAvailableRoles(Array.isArray(data) ? data : []);
         setAvailableRolesForEdit(Array.isArray(data) ? data : []);
       } else {
-        console.error("Error cargando roles:", res.status);
+        // Cambiamos console.error por console.warn para evitar el Error Overlay de Next.js
+        console.warn("Aviso cargando roles:", res.status);
         setAvailableRoles(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
         setAvailableRolesForEdit(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
       }
     } catch (err) {
-      console.error("Error cargando roles:", err);
+      // Cambiamos console.error por console.warn
+      console.warn("Aviso cargando roles:", err);
       setAvailableRoles(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
       setAvailableRolesForEdit(["Técnico", "Ventas", "Administrativo", "Gerente", "Operaciones"]);
     } finally {
@@ -105,7 +102,6 @@ export default function ManageCourses() {
 
     try {
       const token = localStorage.getItem("token");
-
       const payload: any = {
         title: courseToEdit.title,
         category: courseToEdit.category,
@@ -169,14 +165,12 @@ export default function ManageCourses() {
     }
   };
 
-  // Manejar cambio de filtro
   const handleFilterChange = (newFilter: "Todos" | "Onboarding" | "Especialización") => {
     setFilter(newFilter);
     setSelectedRole("");
     setShowRoleFilter(newFilter === "Especialización");
   };
 
-  // Filtrar cursos
   const filtered = courses.filter((c) => {
     const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase());
     let matchesTab = true;
@@ -219,13 +213,10 @@ export default function ManageCourses() {
         />
 
         <div className="p-6 lg:p-10 flex-1 max-w-7xl mx-auto w-full">
-          <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col">
+          <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex flex-col min-h-[400px]">
 
-            {/* Filtros y Buscador Integrados y Unificados */}
             <div className="p-5 border-b border-border flex flex-col lg:flex-row lg:items-center gap-4 bg-muted/10">
-
               <div className="flex flex-wrap items-center gap-2">
-                {/* Filtros de tipo de curso */}
                 <div className="flex flex-wrap gap-1 bg-card border border-border p-1 rounded-xl shadow-sm">
                   {(["Todos", "Onboarding", "Especialización"] as const).map((tab) => (
                     <button
@@ -241,7 +232,6 @@ export default function ManageCourses() {
                   ))}
                 </div>
 
-                {/* Barra de búsqueda de roles (solo visible cuando el filtro es Especialización) */}
                 <AnimatePresence mode="wait">
                   {showRoleFilter && (
                     <motion.div
@@ -279,7 +269,6 @@ export default function ManageCourses() {
                 </AnimatePresence>
               </div>
 
-              {/* Barra de búsqueda por título */}
               <div className="relative w-full lg:max-w-xs ml-auto">
                 <i className="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm"></i>
                 <input
@@ -292,91 +281,104 @@ export default function ManageCourses() {
               </div>
             </div>
 
-            {/* Tabla */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[600px]">
-                <thead>
-                  <tr className="bg-muted/40 border-b border-border">
-                    <th className="px-6 lg:px-8 py-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Nombre del Curso</th>
-                    <th className="px-6 lg:px-8 py-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-center">Categoría</th>
-                    <th className="px-6 lg:px-8 py-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-center">Rol Requerido</th>
-                    <th className="px-6 lg:px-8 py-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {!loading && filtered.map((course) => (
-                    <tr key={course.id} className="group hover:bg-muted/30 transition-colors">
-                      <td className="px-6 lg:px-8 py-4">
-                        <Link href={`/dashboard/administrator/admin/courses/${course.id}/manage`} className="flex items-center gap-4 cursor-pointer group/link">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${course.isPublic ? "bg-green-500/10 text-green-600 border-green-500/20 group-hover/link:bg-green-600 group-hover/link:text-white" : "bg-primary/5 text-primary border border-primary/10 group-hover/link:bg-primary group-hover/link:text-white"}`}>
-                            <i className={`bi ${course.isPublic ? "bi-globe" : "bi-journal-text"} text-lg`}></i>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-sm text-foreground group-hover/link:text-primary transition-colors">{course.title}</span>
-                            <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1 mt-0.5">
-                              {course.isPublic ? <span className="text-green-600 font-semibold">Público</span> : <span className="text-primary font-semibold">Privado</span>}
-                              <span className="mx-1">•</span> Click para ver contenido
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary" />
+              </div>
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="content"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="overflow-x-auto"
+                >
+                  <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="bg-muted/40 border-b border-border">
+                        <th className="px-6 lg:px-8 py-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Nombre del Curso</th>
+                        <th className="px-6 lg:px-8 py-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-center">Categoría</th>
+                        <th className="px-6 lg:px-8 py-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-center">Rol Requerido</th>
+                        <th className="px-6 lg:px-8 py-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {filtered.map((course) => (
+                        <tr key={course.id} className="group hover:bg-muted/30 transition-colors">
+                          <td className="px-6 lg:px-8 py-4">
+                            <Link href={`/dashboard/administrator/admin/courses/${course.id}/manage`} className="flex items-center gap-4 cursor-pointer group/link">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${course.isPublic ? "bg-green-500/10 text-green-600 border-green-500/20 group-hover/link:bg-green-600 group-hover/link:text-white" : "bg-primary/5 text-primary border border-primary/10 group-hover/link:bg-primary group-hover/link:text-white"}`}>
+                                <i className={`bi ${course.isPublic ? "bi-globe" : "bi-journal-text"} text-lg`}></i>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-sm text-foreground group-hover/link:text-primary transition-colors">{course.title}</span>
+                                <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1 mt-0.5">
+                                  {course.isPublic ? <span className="text-green-600 font-semibold">Público</span> : <span className="text-primary font-semibold">Privado</span>}
+                                  <span className="mx-1">•</span> Click para ver contenido
+                                </span>
+                              </div>
+                            </Link>
+                          </td>
+                          <td className="px-6 lg:px-8 py-4 text-center">
+                            <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-md ${course.category?.toUpperCase() === "ESPECIALIZADO" ? "bg-secondary/10 text-secondary border border-secondary/20" : "bg-primary/10 text-primary border border-primary/20"}`}>
+                              {course.category?.toUpperCase() === "ESPECIALIZADO" ? "Especialización" : "Onboarding"}
                             </span>
-                          </div>
-                        </Link>
-                      </td>
-                      <td className="px-6 lg:px-8 py-4 text-center">
-                        <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-md ${course.category?.toUpperCase() === "ESPECIALIZADO" ? "bg-secondary/10 text-secondary border border-secondary/20" : "bg-primary/10 text-primary border border-primary/20"}`}>
-                          {course.category?.toUpperCase() === "ESPECIALIZADO" ? "Especialización" : "Onboarding"}
-                        </span>
-                      </td>
-                      <td className="px-6 lg:px-8 py-4 text-center">
-                        {course.category?.toUpperCase() === "ESPECIALIZADO" && course.jobRole ? (
-                          <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-600 border border-purple-500/20">
-                            <i className="bi bi-person-badge mr-1"></i>
-                            {course.jobRole}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-muted/50 text-muted-foreground border border-border/50">
-                            <i className="bi bi-people mr-1"></i>
-                            Todos los roles
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 lg:px-8 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {!course.isPublic && (
-                            <>
-                              <button
-                                onClick={() => setCourseToEdit({
-                                  ...course,
-                                  requiredRole: course.jobRole || "",
-                                  imageUrl: course.fileUrl || null
-                                })}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all border border-transparent hover:border-primary/20 cursor-pointer"
-                                title="Editar curso"
-                              >
-                                <i className="bi bi-pencil-square text-[15px]"></i>
-                              </button>
-                              <button
-                                onClick={() => setCourseToDelete(course.id)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all border border-transparent hover:border-destructive/20 cursor-pointer"
-                                title="Eliminar curso"
-                              >
-                                <i className="bi bi-trash3 text-[15px]"></i>
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {!loading && filtered.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-12 text-center text-muted-foreground">
-                        <i className="bi bi-inbox text-3xl mb-3 block opacity-50"></i>
-                        <p className="text-sm font-medium">No se encontraron cursos</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td className="px-6 lg:px-8 py-4 text-center">
+                            {course.category?.toUpperCase() === "ESPECIALIZADO" && course.jobRole ? (
+                              <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                                <i className="bi bi-person-badge mr-1"></i>
+                                {course.jobRole}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-muted/50 text-muted-foreground border border-border/50">
+                                <i className="bi bi-people mr-1"></i>
+                                Todos los roles
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 lg:px-8 py-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {!course.isPublic && (
+                                <>
+                                  <button
+                                    onClick={() => setCourseToEdit({
+                                      ...course,
+                                      requiredRole: course.jobRole || "",
+                                      imageUrl: course.fileUrl || null
+                                    })}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all border border-transparent hover:border-primary/20 cursor-pointer"
+                                    title="Editar curso"
+                                  >
+                                    <i className="bi bi-pencil-square text-[15px]"></i>
+                                  </button>
+                                  <button
+                                    onClick={() => setCourseToDelete(course.id)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all border border-transparent hover:border-destructive/20 cursor-pointer"
+                                    title="Eliminar curso"
+                                  >
+                                    <i className="bi bi-trash3 text-[15px]"></i>
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {filtered.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="py-12 text-center text-muted-foreground">
+                            <i className="bi bi-inbox text-3xl mb-3 block opacity-50"></i>
+                            <p className="text-sm font-medium">No se encontraron cursos</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </motion.div>
+              </AnimatePresence>
+            )}
           </div>
         </div>
       </main>
@@ -388,8 +390,6 @@ export default function ManageCourses() {
             <h3 className="text-xl font-bold text-foreground mb-6">Editar Curso</h3>
 
             <form onSubmit={handleUpdate} className="space-y-5">
-
-              {/* Campo de Imagen */}
               <div className="space-y-2">
                 <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">Imagen de portada</label>
                 <label className="relative h-32 w-full border-2 border-dashed border-border rounded-2xl flex items-center justify-center bg-muted/30 hover:border-primary transition-all cursor-pointer group overflow-hidden">
@@ -422,7 +422,6 @@ export default function ManageCourses() {
                 </label>
               </div>
 
-              {/* Título */}
               <div>
                 <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">Título del curso</label>
                 <input
@@ -434,7 +433,6 @@ export default function ManageCourses() {
                 />
               </div>
 
-              {/* Categoría */}
               <div>
                 <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">Categoría</label>
                 <select
@@ -454,7 +452,6 @@ export default function ManageCourses() {
                 </select>
               </div>
 
-              {/* Rol Requerido - Solo para especialización */}
               {courseToEdit.category === "ESPECIALIZADO" && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-widest mb-2 block">

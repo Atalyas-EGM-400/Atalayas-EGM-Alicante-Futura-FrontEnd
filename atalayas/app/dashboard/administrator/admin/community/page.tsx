@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/ui/Sidebar';
 import PageHeader from '@/components/ui/pageHeader';
 import Link from 'next/link';
@@ -29,7 +30,6 @@ export default function EcosystemPage() {
   useEffect(() => {
     const fetchEcosystem = async () => {
       try {
-        // Simulación de carga de datos (Se mantiene igual)
         const mockData: Colaborador[] = [
           {
             id: 'eco-1',
@@ -88,13 +88,18 @@ export default function EcosystemPage() {
             website: 'https://www.aitex.es'
           }
         ];
-        setColaboradores(mockData);
+
+        setTimeout(() => {
+          setColaboradores(mockData);
+          setLoading(false);
+        }, 700);
+
       } catch (err) {
         console.error("Error cargando ecosistema:", err);
-      } finally {
         setLoading(false);
       }
     };
+
     fetchEcosystem();
   }, []);
 
@@ -103,10 +108,9 @@ export default function EcosystemPage() {
     : colaboradores.filter(c => c.type === filter);
 
   return (
-    // CAMBIO: bg-background y text-foreground
-    <div className="flex min-h-screen bg-background font-sans text-foreground">
+    <div className="flex min-h-screen bg-background font-sans text-foreground overflow-hidden">
 
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden bg-white/40 dark:bg-transparent backdrop-blur-3xl transition-all duration-300">
         <PageHeader 
           title="Ecosistema"
           description="Alianzas estratégicas y centros tecnológicos de proximidad"
@@ -115,8 +119,13 @@ export default function EcosystemPage() {
 
         <div className="flex-1 p-6 md:p-10 overflow-y-auto no-scrollbar">
           
-          {/* FILTROS RÁPIDOS - CAMBIO: Colores dinámicos en los botones */}
-          <div className="flex flex-wrap gap-2 mb-10 max-w-6xl">
+          {/* FILTROS */}
+          <motion.div 
+            initial={{ opacity: 0, y: -15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex flex-wrap gap-2 mb-10 max-w-6xl"
+          >
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
@@ -130,54 +139,79 @@ export default function EcosystemPage() {
                 {cat}
               </button>
             ))}
-          </div>
+          </motion.div>
 
-          {/* GRID DE COLABORADORES */}
+          {/* GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 max-w-400">
+            
             {loading ? (
-              Array.from({ length: 10 }).map((_, i) => (
-                // CAMBIO: Skeleton en bg-card
-                <div key={i} className="aspect-square bg-card rounded-[32px] border border-border animate-pulse" />
-              ))
-            ) : filteredList.length === 0 ? (
-              <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-[40px] opacity-40">
-                <p className="text-sm italic font-bold text-muted-foreground">No se han encontrado entidades en esta categoría.</p>
+              <div className="col-span-full flex justify-center py-24">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
               </div>
+            ) : filteredList.length === 0 ? (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-[40px] opacity-40"
+              >
+                <p className="text-sm italic font-bold text-muted-foreground">
+                  No se han encontrado entidades en esta categoría.
+                </p>
+              </motion.div>
             ) : (
-              filteredList.map((entidad) => (
-                <Link 
-                  key={entidad.id}
-                  href={entidad.website} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  // CAMBIO: bg-card y border-border
-                  className="group flex flex-col bg-card border border-border rounded-[35px] p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={filter}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.35 }}
+                  className="contents"
                 >
-                  {/* CONTENEDOR LOGO - CAMBIO: bg-muted/30 y hover:bg-card */}
-                  <div className="aspect-square w-full bg-muted/30 rounded-[25px] flex items-center justify-center p-6 mb-5 overflow-hidden group-hover:bg-card transition-colors border border-transparent group-hover:border-primary/20">
-                    {entidad.logoUrl ? (
-                      <img 
-                        src={entidad.logoUrl} 
-                        alt={entidad.name} 
-                        // Filtro de brillo opcional para logos oscuros en Dark Mode
-                        className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-110 dark:brightness-110 dark:contrast-125"
-                      />
-                    ) : (
-                      <div className="text-4xl font-black text-muted/20 uppercase">{entidad.name.charAt(0)}</div>
-                    )}
-                  </div>
-                  
-                  {/* TEXTOS */}
-                  <div className="flex-1 flex flex-col">
-                    <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] mb-2">
-                      {entidad.type.split(' ')[0]}
-                    </span>
-                    <h3 className="text-[13px] font-black text-foreground leading-tight mb-2 group-hover:text-primary transition-colors">
-                      {entidad.name}
-                    </h3>
-                  </div>
-                </Link>
-              ))
+                  {filteredList.map((entidad, index) => (
+                    <motion.div
+                      key={entidad.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.04 }}
+                    >
+                      <Link 
+                        href={entidad.website} 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex flex-col bg-card border border-border rounded-[35px] p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                      >
+                        {/* LOGO */}
+                        <div className="aspect-square w-full bg-muted/30 rounded-[25px] flex items-center justify-center p-6 mb-5 overflow-hidden group-hover:bg-card transition-colors border border-transparent group-hover:border-primary/20">
+                          {entidad.logoUrl ? (
+                            <img 
+                              src={entidad.logoUrl} 
+                              alt={entidad.name} 
+                              className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-110 dark:brightness-110 dark:contrast-125"
+                            />
+                          ) : (
+                            <div className="text-4xl font-black text-muted/20 uppercase">
+                              {entidad.name.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* TEXTOS */}
+                        <div className="flex-1 flex flex-col">
+                          <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] mb-2">
+                            {entidad.type.split(' ')[0]}
+                          </span>
+
+                          <h3 className="text-[13px] font-black text-foreground leading-tight mb-2 group-hover:text-primary transition-colors">
+                            {entidad.name}
+                          </h3>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
             )}
           </div>
         </div>
