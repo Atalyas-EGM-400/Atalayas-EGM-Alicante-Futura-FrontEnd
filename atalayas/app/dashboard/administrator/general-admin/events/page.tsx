@@ -55,23 +55,32 @@ export default function GAdminPublicEventsPage() {
       
       <main className="flex-1 flex flex-col min-w-0">
         <PageHeader 
-          title="Eventos Públicos" 
-          description="Gestión exclusiva de eventos globales del ecosistema (Sin empresa asignada)."
-          icon={<i className="bi bi-calendar-event" />}
-          action={
-            <div className="flex items-center gap-3">
+  title="Eventos Públicos" 
+  description="Gestión exclusiva de eventos globales del ecosistema."
+  icon={<i className="bi bi-calendar-event" />}
+  action={
+    <div className="flex items-center gap-3">
               <div className="flex justify-end min-w-12">
-              <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Buscar evento público..." />
-              </div>
-              <button 
-                onClick={() => router.push(`/dashboard/administrator/general-admin/events/new`)} 
-                  className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm w-full"
-              >
-                Crear Evento Público
-              </button>
-            </div>
-          }
+        <SearchInput 
+          value={searchQuery} 
+          onChange={setSearchQuery} 
+          placeholder="Buscar..." 
         />
+      </div>
+
+      {/* Botón de Crear: Icono en móvil, Texto completo en desktop */}
+      <button 
+        onClick={() => router.push(`/dashboard/administrator/general-admin/events/new`)} 
+              className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
+      >
+        <i className="bi bi-plus-lg text-lg sm:text-base"></i>
+        <span className="hidden sm:inline whitespace-nowrap">
+          Crear Evento
+        </span>
+      </button>
+    </div>
+  }
+/>
 
         <div className="flex-1 overflow-y-auto p-10 no-scrollbar">
           {loading ? (

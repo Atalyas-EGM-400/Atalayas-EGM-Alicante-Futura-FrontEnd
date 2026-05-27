@@ -76,17 +76,24 @@ export default function ServicesPage() {
 
       <main className="flex-1 overflow-auto flex flex-col relative">
         <PageHeader 
-          title="Gestión de Servicios"
-          description="Organiza y supervisa todos los servicios del ecosistema corporativo."
-          icon={<i className="bi bi-briefcase-fill"></i>}
-          action={
-            <Link href="/dashboard/administrator/general-admin/services/new"
-              className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
-            >
-              <i className="bi bi-plus-lg"></i> Nuevo servicio
-            </Link>
-          }
-        />
+  title="Gestión de Servicios"
+  description="Organiza y supervisa todos los servicios del ecosistema corporativo."
+  icon={<i className="bi bi-briefcase-fill"></i>}
+  action={
+    <div className="flex items-center justify-end">
+      <Link 
+        href="/dashboard/administrator/general-admin/services/new"
+        className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm w-10 h-10 sm:w-auto sm:h-auto sm:px-5 sm:py-2.5 shrink-0"
+        title="Nuevo servicio"
+      >
+        <i className="bi bi-plus-lg text-lg sm:text-base"></i>
+        <span className="hidden sm:inline whitespace-nowrap">
+          Nuevo servicio
+        </span>
+      </Link>
+    </div>
+  }
+/>
 
         <div className="p-6 lg:p-10 flex-1 max-w-7xl mx-auto w-full space-y-6">
           

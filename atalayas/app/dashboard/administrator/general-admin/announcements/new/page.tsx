@@ -60,7 +60,7 @@ export default function NewGlobalAnnouncementPage() {
       if (formData.imageFile) {
         data.append("image", formData.imageFile);
       }
-      data.append("sendEmail", String(formData.sendEmail));
+      data.append("sendEmail", formData.sendEmail ? "1" : "0");
 
 
       const res = await fetch(API_ROUTES.ANNOUNCEMENTS.CREATE, {
@@ -85,7 +85,6 @@ export default function NewGlobalAnnouncementPage() {
 
   return (
     <div className="flex min-h-screen bg-background font-sans">
-      {/* Sidebar configurado para GENERAL_ADMIN */}
       
       <main className="flex-1 overflow-auto flex flex-col">
         <PageHeader 

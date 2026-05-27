@@ -100,47 +100,50 @@ export default function EditCompanyPage() {
     e.preventDefault();
     setSaving(true);
 
-    try {
-      const token = localStorage.getItem('token');
-      const body = new FormData();
+    const updated = await res.json();
 
-      if (formData.activity) body.append('activity', formData.activity);
-      if (formData.address) body.append('address', formData.address);
-      if (formData.description) body.append('description', formData.description);
-      if (formData.contactEmail) body.append('contactEmail', formData.contactEmail);
-      if (formData.contactPhone) body.append('contactPhone', formData.contactPhone);
-      if (formData.website) body.append('website', formData.website);
-      if (newFile) body.append('file', newFile);
-
-      const res = await fetch(API_ROUTES.COMPANIES.GET_BY_ID(formData.id), {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body,
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        console.error('Error del servidor:', err);
-        return;
+    // 1. Obtener usuario actual del localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      
+      // 2. Actualizar la URL del logo en el objeto user (con precaución en la estructura)
+      if (user.company) {
+        user.company.logoUrl = updated.logoUrl;
+      } else if (user.Company) {
+        user.Company.logoUrl = updated.logoUrl;
+      } else {
+        // Por si acaso la estructura es plana
+        user.logoUrl = updated.logoUrl; 
       }
-
-      const updated = await res.json();
-
-      if (updated.logoUrl) setCurrentLogoUrl(updated.logoUrl);
-
-      setNewFile(null);
-      setLogoPreview(null);
-
-      router.refresh();
-
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
+      
+      // 3. Guardar el usuario actualizado de vuelta en el localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      console.log('🟡 EditPage: localStorage sincronizado con nuevo logo');
     }
-  };
+
+    // 4. Emitir el evento personalizado para que Sidebar lo escuche
+    console.log('🟢 EditPage: Emitiendo evento de actualización de logo...');
+    window.dispatchEvent(new Event('company_logo_updated'));
+
+
+    if (updated.logoUrl) setCurrentLogoUrl(updated.logoUrl);
+    setNewFile(null);
+    setLogoPreview(null);
+    router.refresh();
+
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setSaving(false);
+  }
+};
+
+  if (loading) return (
+    <div className="flex min-h-screen bg-background items-center justify-center font-sans">
+      <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-background font-sans text-foreground overflow-hidden">

@@ -80,6 +80,14 @@ export default function AdminDashboard() {
             suggestionsRes.json(), documentsRes.json(), statsRes.json(), enrollmentsRes.json(),
           ]);
 
+          const sortedCourses = Array.isArray(coursesData) 
+  ? [...coursesData].sort((a, b) => {
+      // Si a es privado y b público, a va primero (-1)
+      if (a.isPublic === b.isPublic) return 0;
+      return a.isPublic ? 1 : -1;
+    })
+  : [];
+
         // 2. PROCESAMIENTO SEGURO DE SUGERENCIAS
         // Convertimos a array por si el backend envía un objeto de mapeo
         const allSuggestions = Array.isArray(suggestionsData) 
@@ -98,8 +106,7 @@ export default function AdminDashboard() {
           (statsData?.onboarding?.total ?? 0) - (statsData?.onboarding?.finished ?? 0);
 
         // Actualización de estados
-        setCourses(Array.isArray(coursesData) ? coursesData.slice(0, 5) : []);
-        setAnnouncements(Array.isArray(announcementsData) ? announcementsData.slice(0, 3) : []);
+setCourses(sortedCourses.slice(0, 5));        setAnnouncements(Array.isArray(announcementsData) ? announcementsData.slice(0, 3) : []);
         
         // Solo mostramos las 3 sugerencias pendientes más recientes en la lista visual
         setSuggestions(pendingSuggestionsList.slice(0, 3));

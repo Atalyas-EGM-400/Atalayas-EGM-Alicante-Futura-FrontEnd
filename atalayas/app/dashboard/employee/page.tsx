@@ -45,6 +45,7 @@ export default function EmployeeDashboard() {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [lastResetDate, setLastResetDate] = useState<Date | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -71,7 +72,7 @@ export default function EmployeeDashboard() {
         displayContent: a.content,
         media: a.imageUrl,
         type: "ANUNCIO",
-        badge: a.isPublic ? "Global" : a.Company?.name || "Empresa",
+        badge: a.isPublic ? "Público" : a.Company?.name || "Mi Empresa",
         href: `/dashboard/employee/announcements/${a.id}`,
         date: a.createdAt,
       }));
@@ -83,7 +84,7 @@ export default function EmployeeDashboard() {
         displayContent: e.description || `Evento programado para el ${new Date(e.event_date).toLocaleDateString()}`,
         media: e.image_url,
         type: "EVENTO",
-        badge: e.companyId === null ? "Global" : (e.Company?.name || "Mi empresa"),
+        badge: e.companyId === null ? "Público" : (e.Company?.name || "Mi empresa"),
         href: `/dashboard/employee/events/${e.id}`,
         date: e.created_at || e.event_date,
       }));
@@ -131,7 +132,10 @@ export default function EmployeeDashboard() {
     if (unreadCount === 0) return;
     try {
       const token = localStorage.getItem("token");
+      const now = new Date();
+      setLastResetDate(now);
       setUnreadCount(0);
+      
       await fetchWithApiFallback(API_ROUTES.NOTIFICATIONS.RESET, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
@@ -197,7 +201,8 @@ export default function EmployeeDashboard() {
             <NotificationBell
               unreadCount={unreadCount}
               onReset={handleNotificationReset}
-              latestItems={slides} // Usamos los slides unificados para la campana
+              latestItems={slides}
+              lastResetDate={lastResetDate} // Usamos los slides unificados para la campana
             />
           }
         />
@@ -244,7 +249,7 @@ export default function EmployeeDashboard() {
                             >
                               {actualItem.badge}
                             </span>
-                            <span className="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] backdrop-blur-md text-white/50 border border-white/10 bg-black/20">
+                            <span className="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] backdrop-blur-md text-white border border-white/10 bg-purple-700">
                               {actualItem.type}
                             </span>
                           </div>

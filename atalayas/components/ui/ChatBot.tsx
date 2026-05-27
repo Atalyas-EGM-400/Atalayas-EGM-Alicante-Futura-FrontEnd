@@ -14,15 +14,16 @@ type Message = {
 };
 
 const SUGGESTED = [
+    '¿Que hago en mi primer día?',
     '¿Qué servicios tengo disponibles?',
     '¿Qué cursos puedo hacer?',
-    '¿Cómo contacto con seguridad?',
+    'Dame información general de lo que puedo hacer'
 ];
 
 const WELCOME: Message = {
     id: 'welcome',
     role: 'assistant',
-    content: '¡Hola! 👋 Soy el asistente de Atalayas. Puedo ayudarte con información sobre servicios, cursos y documentos disponibles. ¿En qué te puedo ayudar?',
+    content: '¡Hola! 👋 Soy el asistente de Atalayas. Puedo ayudarte con la información sobre la plataforma que tienes disponible. ¿En qué te puedo ayudar?',
     timestamp: new Date(),
 };
 

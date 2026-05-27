@@ -73,6 +73,7 @@ export default function NewAnnouncementPage() {
       if (formData.imageFile) {
         data.append("image", formData.imageFile);
       }
+       data.append("sendEmail", formData.sendEmail ? '1' : '0');
 
       data.append("sendEmail", String(formData.sendEmail));
 

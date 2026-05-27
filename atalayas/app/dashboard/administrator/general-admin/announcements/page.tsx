@@ -184,23 +184,34 @@ export default function AnnouncementsPage() {
     <div className="flex h-screen bg-[#f5f5f7] dark:bg-[#0d0d0f] overflow-hidden">
       <main className="flex-1 flex flex-col min-w-0 bg-white/40 dark:bg-transparent backdrop-blur-3xl">
         <PageHeader 
-          title="Anuncios Públicos" 
-          description="Visualización de comunicados globales y noticias de la plataforma."
-          icon={<i className="bi bi-megaphone-fill" />}
-          action={
-            <div className="flex items-center gap-3">
-              <div className="flex justify-end min-w-12">
-              <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Buscar noticias..." />
-              </div>
-              <button 
-                onClick={() => router.push(`/dashboard/administrator/general-admin/announcements/new`)}
-              className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
-              >
-                Crear Nuevo
-              </button>
-            </div>
-          }
+  title="Anuncios Públicos" 
+  description="Visualización de comunicados globales y noticias de la plataforma."
+  icon={<i className="bi bi-megaphone-fill" />}
+  action={
+    <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
+      {/* Contenedor del Buscador */}
+      <div className="flex-1 sm:flex-none max-w-45 sm:max-w-none">
+        <SearchInput 
+          value={searchQuery} 
+          onChange={setSearchQuery} 
+          placeholder="Buscar noticias..." 
         />
+      </div>
+
+      {/* Botón de Crear: Consistente con la página de eventos */}
+      <button 
+        onClick={() => router.push(`/dashboard/administrator/general-admin/announcements/new`)}
+              className="bg-secondary text-secondary-foreground px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-sm"
+        title="Crear Nuevo Anuncio"
+      >
+        <i className="bi bi-plus-lg text-lg sm:text-base"></i>
+        <span className="hidden sm:inline whitespace-nowrap">
+          Crear Nuevo
+        </span>
+      </button>
+    </div>
+  }
+/>
 
         <div className="flex-1 overflow-y-auto p-6 lg:p-10 no-scrollbar">
           <div className="max-w-7xl mx-auto space-y-12">

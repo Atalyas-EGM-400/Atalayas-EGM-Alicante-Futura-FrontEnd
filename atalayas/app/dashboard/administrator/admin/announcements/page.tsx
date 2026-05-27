@@ -463,6 +463,22 @@ export default function AnnouncementsPage() {
             </div>
           }
         />
+      </div>
+
+      {/* Botón: Adaptativo y consistente */}
+      <button 
+        onClick={() => router.push(`/dashboard/administrator/admin/announcements/new`)}
+        className="bg-secondary text-secondary-foreground rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm w-10 h-10 sm:w-auto sm:h-auto sm:px-5 sm:py-2.5 shrink-0"
+        title="Crear Nuevo"
+      >
+        <i className="bi bi-plus-lg text-lg sm:text-base"></i>
+        <span className="hidden sm:inline whitespace-nowrap">
+          Crear Nuevo
+        </span>
+      </button>
+    </div>
+  }
+/>
 
         <div className="flex-1 overflow-y-auto p-6 lg:p-10 no-scrollbar">
           <div className="max-w-7xl mx-auto space-y-12">

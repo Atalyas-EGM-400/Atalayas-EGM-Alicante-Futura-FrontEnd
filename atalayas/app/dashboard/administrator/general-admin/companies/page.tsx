@@ -131,7 +131,6 @@ export default function CompaniesDirectoryPage() {
 
   return (
     <div className="flex h-screen bg-[#f5f5f7] dark:bg-[#0d0d0f] font-sans text-foreground overflow-hidden relative">
-      <Sidebar role="GENERAL_ADMIN" />
 
       <main className="flex-1 flex flex-col min-w-0 bg-white/40 dark:bg-transparent backdrop-blur-3xl">
         <PageHeader 
@@ -202,7 +201,7 @@ export default function CompaniesDirectoryPage() {
                           >
                             <td className="px-8 py-4">
                               <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-50 dark:from-white/5 dark:to-transparent border border-gray-200/50 dark:border-white/8 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
+                                <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-gray-100 to-gray-50 dark:from-white/5 dark:to-transparent border border-gray-200/50 dark:border-white/8 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
                                   {company.logoUrl ? (
                                     <img src={encodeURI(company.logoUrl)} className="w-full h-full object-cover" alt="" />
                                   ) : (
@@ -272,7 +271,7 @@ export default function CompaniesDirectoryPage() {
           </div>
 
           {/* ── PANEL DERECHO: DETALLE (Estilo Side-Sheet) ── */}
-          <aside className={`w-[350px] lg:w-[450px] shrink-0 border-l border-gray-200/50 dark:border-white/6 bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-y-auto no-scrollbar ${selected ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 absolute right-0'}`}>
+          <aside className={`w-87.5 lg:w-112.5 shrink-0 border-l border-gray-200/50 dark:border-white/6 bg-white/80 dark:bg-[#1c1c1e]/80 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-y-auto no-scrollbar ${selected ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 absolute right-0'}`}>
             {selected && (
               <div className="p-10 space-y-10 relative">
                 

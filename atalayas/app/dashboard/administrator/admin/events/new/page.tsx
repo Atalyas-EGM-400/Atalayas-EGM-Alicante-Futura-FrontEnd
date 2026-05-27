@@ -44,7 +44,7 @@ export default function NewEventPage() {
       data.append("location", formData.location);
       data.append("companyId", user.companyId);
 
-      data.append("sendEmail", String(formData.sendEmail));
+      data.append("sendEmail", formData.sendEmail ? "1" : "0");
 
       // ✅ CORRECCIÓN: Solo añadir si hay un valor, de lo contrario no enviar nada
       if (formData.max_capacity && formData.max_capacity !== "") {
@@ -77,8 +77,8 @@ export default function NewEventPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background font-sans">
-      <main className="flex-1 flex flex-col">
+    <div className="flex h-screen overflow-hidden bg-background font-sans">
+  <main className="flex-1 overflow-y-auto flex flex-col scroll-smooth">
         <PageHeader
           title="Crear Evento"
           description="Configura la fecha, lugar y aforo de la actividad."

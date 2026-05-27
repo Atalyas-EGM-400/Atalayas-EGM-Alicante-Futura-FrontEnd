@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { API_ROUTES } from '@/lib/utils';
 
 interface SidebarProps {
   role: 'GENERAL_ADMIN' | 'ADMIN' | 'EMPLOYEE' | 'PUBLIC';
@@ -32,7 +33,7 @@ const navItems = {
     { label: 'Panel', href: '/dashboard/administrator/admin', icon: <i className="bi bi-house-fill"></i> },
     { label: 'Mi Empresa', href: '/dashboard/administrator/admin/company', icon: <i className="bi bi-building-fill"></i> },
     { label: 'Empleados', href: '/dashboard/administrator/admin/employees', icon: <i className="bi bi-people-fill"></i>},
-    { label: 'Onboarding', href: '/dashboard/administrator/admin/onboarding', icon: <i className="bi bi-person-walking"></i>},
+    { label: 'Onboarding', href: '/dashboard/administrator/admin/onboarding', icon: <i className="bi bi-rocket-takeoff-fill"></i>},
     { label: 'Cursos', href: '/dashboard/administrator/admin/courses/manage', icon: <i className="bi bi-mortarboard-fill"></i> },
     { label: 'Documentos', href: '/dashboard/administrator/admin/documents', icon: <i className="bi bi-file-earmark-text-fill"></i> },
     { label: 'Servicios', href: '/dashboard/administrator/admin/services', icon: <i className="bi bi-suitcase-lg-fill"></i> },
@@ -117,6 +118,44 @@ export default function Sidebar({ role }: SidebarProps) {
     return () => window.removeEventListener('resize', checkResizing);
   }, []);
 
+  // Dentro de tu componente Sidebar...
+
+useEffect(() => {
+  const fetchPendingCounts = async () => {
+    // Solo hacemos la petición si el usuario es administrador
+    if (role !== 'GENERAL_ADMIN') return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const res = await fetch(API_ROUTES.COMPANY_REQUESTS.GET_PENDING , {
+        method: 'GET',
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        
+        // 1. Actualizamos el estado local para que se vea YA
+        setPendingRequestsCount(data.requests || 0);
+
+        // 2. Sincronizamos el localStorage para que otros componentes lo sepan
+        localStorage.setItem('count_requests', String(data.requests || 0));
+      }
+    } catch (error) {
+      console.error("Error al obtener conteos iniciales:", error);
+    }
+  };
+
+  if (mounted) {
+    fetchPendingCounts();
+  }
+}, [mounted, role]); // Se ejecuta al montar y si el rol cambia
+
   useEffect(() => {
     const updateCounts = () => {
       setPendingRequestsCount(Number(localStorage.getItem('count_requests')) || 0);
@@ -125,6 +164,52 @@ export default function Sidebar({ role }: SidebarProps) {
     updateCounts();
     return () => window.removeEventListener('local-storage-update', updateCounts);
   }, []);
+
+  useEffect(() => {
+  // Función centralizada para cargar el usuario
+  const loadUser = () => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) setUser(JSON.parse(savedUser));
+  };
+
+  // Carga inicial
+  loadUser();
+
+  // 👇 NUEVO: Escuchar el evento personalizado 👇
+  const handleLogoUpdate = () => {
+    console.log("🟠 Sidebar: Escuchando evento de actualización de logo, recargando usuario...");
+    loadUser(); // Recargamos el usuario del localStorage (donde estará el nuevo logo)
+  };
+
+  // Añadimos el listener para nuestro evento custom
+  window.addEventListener('company_logo_updated', handleLogoUpdate);
+
+  // Configuración del tema y listeners existentes...
+  const savedTheme = document.cookie.split('; ').find(row => row.startsWith('theme='))?.split('=')[1];
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const initialTheme = savedTheme === 'dark' || (!savedTheme && prefersDark);
+  setIsDark(initialTheme);
+  
+  if (initialTheme) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+
+  setMounted(true);
+
+  const checkResizing = () => {
+    if (window.innerWidth < 1024) setCollapsed(true);
+  };
+  window.addEventListener('resize', checkResizing);
+
+  // 👇 NUEVO: Limpieza del listener en el desmontado 👇
+  return () => {
+    window.removeEventListener('resize', checkResizing);
+    window.removeEventListener('company_logo_updated', handleLogoUpdate);
+    };
+  }, []);
+
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -172,8 +257,7 @@ export default function Sidebar({ role }: SidebarProps) {
       {!mobileOpen && (
         <button 
           onClick={() => setMobileOpen(true)}
-          className="lg:hidden fixed top-20 left-5 z-9999 w-12 h-12 bg-white dark:bg-card border border-border shadow-xl rounded-2xl flex items-center justify-center text-primary transition-all active:scale-90"
-        >
+className="lg:hidden fixed bottom-6 left-6 z-50 w-14 h-14 bg-primary text-white shadow-2xl rounded-full flex items-center justify-center active:scale-90"        >
           <i className="bi bi-list text-2xl"></i>
         </button>
       )}
@@ -195,7 +279,7 @@ export default function Sidebar({ role }: SidebarProps) {
         <div className={`flex items-center justify-between border-b border-border transition-all duration-300 ${!showText ? 'h-20 px-0 justify-center' : 'h-24 px-4 gap-3'}`}>
           <div className={`
             bg-white rounded-[18px] shadow-sm border border-gray-200/60 dark:border-white/10 flex items-center justify-center overflow-hidden transition-all
-            ${!showText ? 'w-12 h-12 p-1.5' : 'flex-1 h-14 p-2.5'}
+            ${!showText ? 'w-12 h-12' : 'w-full h-20 flex items-center justify-center'}
           `}>
             <img src={displayLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
           </div>

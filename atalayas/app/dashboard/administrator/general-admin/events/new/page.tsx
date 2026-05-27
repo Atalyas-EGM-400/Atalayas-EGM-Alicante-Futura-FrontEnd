@@ -35,21 +35,43 @@ export default function GAdminNewPublicEvent() {
     try {
       const token = localStorage.getItem('token');
 
+      // 1. Usamos FormData para poder enviar el archivo
+      const data = new FormData();
+      
+      // 2. Agregamos los campos de texto
+      data.append("title", formData.title);
+      data.append("description", formData.description);
+      data.append("event_date", formData.event_date);
+      data.append("location", formData.location);
+      
+      // 3. Manejo de tipos específicos
+      if (formData.max_capacity) {
+        data.append("max_capacity", formData.max_capacity.toString());
+      }
+      
+      // 4. El Booleano (enviado como string para seguridad en multipart)
+      data.append("sendEmail", formData.sendEmail ? "true" : "false");
+      
+      // 5. La Imagen
+      if (formData.imageFile) {
+        data.append("file", formData.imageFile); // Asegúrate que el backend espere "image"
+      }
+
+      // 6. En el caso de General Admin, companyId es null
+      // Algunos backends prefieren no recibir la clave si es null, 
+      // o recibir la cadena "null"
+      data.append("companyId", ""); 
+
       const res = await fetch(API_ROUTES.EVENTS.CREATE, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
+          // IMPORTANTE: No pongas 'Content-Type', el navegador lo pondrá como 'multipart/form-data'
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({
-          ...formData,
-          max_capacity: formData.max_capacity ? parseInt(formData.max_capacity) : null,
-          companyId: null 
-        })
+        body: data
       });
 
       if (res.ok) {
-        // Redirigimos a la lista de eventos del General Admin
         router.push('/dashboard/administrator/general-admin/events');
       } else {
         const errorData = await res.json();
@@ -113,18 +135,6 @@ export default function GAdminNewPublicEvent() {
                   className="w-full p-4 mt-1 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border-none font-bold outline-none focus:ring-2 ring-primary/20 transition-all" 
                   value={formData.event_date} 
                   onChange={(e) => setFormData({...formData, event_date: e.target.value})} 
-                />
-              </div>
-
-              {/* Capacidad */}
-              <div>
-                <label className="text-[10px] font-black uppercase opacity-40 ml-1 italic">Aforo Máximo (opcional)</label>
-                <input 
-                  type="number" 
-                  placeholder="Ej: 50..."
-                  className="w-full p-4 mt-1 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border-none font-bold outline-none focus:ring-2 ring-primary/20 transition-all" 
-                  value={formData.max_capacity} 
-                  onChange={(e) => setFormData({...formData, max_capacity: e.target.value})} 
                 />
               </div>
 
