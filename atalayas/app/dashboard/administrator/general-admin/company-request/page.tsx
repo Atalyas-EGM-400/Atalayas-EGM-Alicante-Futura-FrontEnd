@@ -91,25 +91,32 @@ export default function CompanyRequestsPage() {
 
   useEffect(() => { fetchRequests(); fetchPendingCount() }, [filter]);
 
-  const handleApprove = async (id: string) => {
-    setActionLoading(true);
-    try {
-      const res = await fetch(API_ROUTES.COMPANY_REQUESTS.APPROVE(id), {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      if (!res.ok) throw new Error('Error al aprobar');
-      
-      updateSidebarCounter(); // Actualización instantánea
-      await fetchRequests();
-      await fetchPendingCount();
-      setSelected(null);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setActionLoading(false);
+const handleApprove = async (id: string) => {
+  setActionLoading(true);
+  try {
+    const res = await fetch(API_ROUTES.COMPANY_REQUESTS.APPROVE(id), {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    
+    // ✨ NUEVO: Si no es un 200/OK, intentamos leer el mensaje del backend
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      const errorMsg = errorData.message || 'Error desconocido en el servidor';
+      throw new Error(errorMsg); // 💡 Ahora lanzará el error real
     }
-  };
+    
+    updateSidebarCounter(); 
+    await fetchRequests();
+    await fetchPendingCount();
+    setSelected(null);
+  } catch (err: any) {
+    console.error("❌ Detalle del error en frontend:", err);
+    alert(`No se pudo aprobar: ${err.message}`); // 🚨 Te mostrará el error real en un alert
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   const handleReject = async () => {
     if (!selected || !rejectReason.trim()) return;
