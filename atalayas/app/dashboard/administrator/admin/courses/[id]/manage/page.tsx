@@ -302,7 +302,7 @@ export default function AdminCourseDetailPage() {
 
       {/* Delete modal - solo visible si tiene permisos */}
       {showDeleteModal && isModifiable && (
-        <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-10002 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-card w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border border-border text-center animate-in zoom-in-95">
             <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-6 text-2xl border border-destructive/20">
               <i className="bi bi-exclamation-triangle"></i>
